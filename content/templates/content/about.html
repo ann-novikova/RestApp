@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .team-card img {
+        filter: grayscale(100%);
+        transition: 0.5s;
+        object-fit: cover;
+        height: 400px;
+    }
+    .team-card:hover img {
+        filter: grayscale(0%);
+    }
+    .story-img {
+        border: 1px solid var(--gold);
+        padding: 10px;
+    }
+</style>
+
+<section class="py-5 mt-5">
+    <div class="container">
+        <!-- History -->
+        <div class="row align-items-center mb-5 pb-5">
+            <div class="col-md-6 mb-4">
+                <h2 class="display-4 mb-4 text-gold italic">Наша История</h2>
+                <p class="text-muted italic mb-4" style="line-height: 2;">
+                    {{ info.about_history }}
+                </p>
+                <h3 class="h5 text-gold uppercase mb-3">Наша миссия</h3>
+                <p class="text-muted">{{ info.about_mission }}</p>
+            </div>
+            <div class="col-md-6">
+                <img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974" class="img-fluid story-img shadow-lg" alt="Interior">
+            </div>
+        </div>
+
+        <!-- Team -->
+        <div class="text-center py-5">
+            <h2 class="display-5 mb-2">Наши Мастера</h2>
+            <p class="text-gold uppercase tracking-widest mb-5 small">{{ info.team_description|default:"Команда профессионалов" }}</p>
+            
+            <div class="row">
+                {% for member in team %}
+                <div class="col-md-4 mb-4 team-card">
+                    <div class="mb-3 overflow-hidden">
+                        {% if member.photo %}
+                            <img src="{{ member.photo.url }}" class="w-100" alt="{{ member.name }}">
+                        {% else %}
+                            <img src="https://images.unsplash.com/photo-1583394293214-28ded15ee548?q=80&w=1980" class="w-100" alt="Chef">
+                        {% endif %}
+                    </div>
+                    <h4 class="text-gold mb-1">{{ member.name }}</h4>
+                    <p class="text-muted small uppercase mb-3">{{ member.position }}</p>
+                    <p class="px-3 small italic">{{ member.bio }}</p>
+                </div>
+                {% empty %}
+                <p>Информация о команде в процессе обновления.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
