@@ -1,4 +1,7 @@
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
+from datetime import timedelta
+from django.utils import timezone
 from django.db import models
 
 from config import settings
@@ -49,14 +52,8 @@ class Booking(models.Model):
         related_name='bookings',
         verbose_name="Столик"
     )
-    date = models.DateField(verbose_name="Дата")
-    time = models.TimeField(verbose_name="Время")
-    duration = models.PositiveIntegerField(
-        default=120,
-        validators=[MinValueValidator(120)],
-        verbose_name="Длительность брони (мин)",
-        help_text="Минимум 120 минут (2 часа)"
-    )
+    start_time = models.DateTimeField(verbose_name="Дата и время начала")
+    end_time = models.DateTimeField(verbose_name="Дата и время окончания")
     guests_count = models.PositiveSmallIntegerField(verbose_name="Количество гостей")
 
     # Данные для гостей без регистрации
@@ -77,3 +74,47 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"Бронь №{self.id} - Столик {self.table.number} на {self.date}"
+
+    @staticmethod
+    def validate_times(start_time, end_time):
+        """Единая логика проверки времени для всех мест"""
+        if not start_time or not end_time:
+            raise ValidationError("Необходимо указать начало и конец.")
+
+        if start_time >= end_time:
+            raise ValidationError("Время окончания должно быть позже начала.")
+
+        if (end_time - start_time) < timedelta(hours=2):
+            raise ValidationError("Минимальное время бронирования — 2 часа.")
+
+        return True
+
+    def clean(self):
+        """
+        Единая валидация для форм, админки и API
+        """
+        # 1. Проверка времени
+        self.validate_times(self.start_time, self.end_time)
+
+        # 2. Проверка столика и гостей
+        if self.table and self.guests_count:
+            if self.guests_count > self.table.capacity:
+                raise ValidationError({
+                    'guests_count': f"Стол №{self.table.number} вмещает только {self.table.capacity} чел."
+                })
+
+        # 3. Проверка пересечений
+        if self.table and self.start_time and self.end_time:
+            overlapping = Booking.objects.filter(
+                table=self.table,
+                status__in=['pending', 'confirmed'],
+                start_time__lt=self.end_time,
+                end_time__gt=self.start_time
+            ).exclude(pk=self.pk)
+
+            if overlapping.exists():
+                raise ValidationError("Этот столик уже занят на это время.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

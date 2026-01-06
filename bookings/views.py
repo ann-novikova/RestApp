@@ -1,40 +1,48 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from datetime import datetime, timedelta
+from django.core.exceptions import ValidationError
+from datetime import datetime
+from django.shortcuts import render
+from django.views import View
 from .models import Table, Booking
-from .serializers import BookingCreateSerializer
+from .serializers import BookingSerializer
+
+
+class BookingPageView(View):
+    def get(self, request):
+        return render(request, 'booking.html')
 
 class TableAvailabilityView(APIView):
     """API для получения списка столиков с их статусом на конкретное время"""
     permission_classes = [permissions.AllowAny]
-    template_name = 'booking.html'
 
     def get(self, request):
         date_str = request.query_params.get('date')
-        time_str = request.query_params.get('time')
+        start_str = request.query_params.get('start')
+        end_str = request.query_params.get('end')
 
-        if not date_str or not time_str:
-            return Response({"error": "Date and time required"}, status=400)
+        if not all([date_str, start_str, end_str]):
+            return Response({"error": "Параметры date, start и end обязательны"}, status=400)
 
-        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        selected_time = datetime.strptime(time_str, '%H:%M').time()
-        target_dt = datetime.combine(selected_date, selected_time)
+        try:
+            start_dt = datetime.strptime(f"{date_str} {start_str}", '%Y-%m-%d %H:%M')
+            end_dt = datetime.strptime(f"{date_str} {end_str}", '%Y-%m-%d %H:%M')
+
+            Booking.validate_times(start_dt, end_dt)
+
+        except ValidationError as e:
+            return Response({"end_time": e.message}, status=400)
 
         tables = Table.objects.all()
         table_data = []
 
         for table in tables:
-            duration = table.min_duration
-            start_search = target_dt - timedelta(minutes=duration)
-            end_search = target_dt + timedelta(minutes=duration)
-
-            # Проверка занятости
             is_occupied = Booking.objects.filter(
                 table=table,
-                date=selected_date,
                 status__in=['pending', 'confirmed'],
-                time__range=(start_search.time(), end_search.time())
+                start_time__lt=end_dt,
+                end_time__gt=start_dt
             ).exists()
 
             table_data.append({
@@ -49,20 +57,20 @@ class TableAvailabilityView(APIView):
 class BookingCreateView(APIView):
     """Создание брони. Если есть токен — привязываем к пользователю"""
     permission_classes = [permissions.AllowAny]
-    template_name = 'booking.html'
 
     def post(self, request):
-        serializer = BookingCreateSerializer(data=request.data)
+        serializer = BookingSerializer(data=request.data, context={'request': request})
+
         if serializer.is_valid():
             user = request.user if request.user.is_authenticated else None
             serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class BookingCancelView(APIView):
     """Отмена брони пользователем"""
     permission_classes = [permissions.IsAuthenticated]
-    template_name = 'booking.html'
 
     def post(self, request, pk):
         try:
