@@ -1,7 +1,7 @@
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
-from datetime import timedelta
 from django.utils import timezone
+from datetime import timedelta
 from django.db import models
 
 from config import settings
@@ -73,11 +73,14 @@ class Booking(models.Model):
         verbose_name_plural = "Бронирования"
 
     def __str__(self):
-        return f"Бронь №{self.id} - Столик {self.table.number} на {self.date}"
+        return f"Бронь №{self.id} - Столик {self.table.number} на {self.start_time}"
 
     @staticmethod
     def validate_times(start_time, end_time):
         """Единая логика проверки времени для всех мест"""
+        if start_time < timezone.now():
+            raise ValidationError("Время начала бронирования не может быть в прошлом.")
+
         if not start_time or not end_time:
             raise ValidationError("Необходимо указать начало и конец.")
 
@@ -102,6 +105,8 @@ class Booking(models.Model):
                 raise ValidationError({
                     'guests_count': f"Стол №{self.table.number} вмещает только {self.table.capacity} чел."
                 })
+
+
 
         # 3. Проверка пересечений
         if self.table and self.start_time and self.end_time:

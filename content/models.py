@@ -33,7 +33,7 @@ class RestaurantInfo(SingletonModel):
 
     def __str__(self):
         """Возвращает строковое представление объекта Ресторана"""
-        return {self.name}
+        return self.name
 
 class TeamMember(models.Model):
     """Модель для описания членов команды ресторана"""

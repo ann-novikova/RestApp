@@ -2,6 +2,43 @@
 
 {% block content %}
 <style>
+    /* Основной текст истории */
+    .story-text {
+        font-weight: 300;
+        line-height: 1.8;
+        color: rgba(255, 255, 255, 0.85); /* Чуть светлее для читаемости */
+        text-align: justify;
+        font-size: 1.05rem;
+    }
+
+    /* Автоматические отступы между параграфами, которые создаст фильтр linebreaks */
+    .story-text p {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Эффект Буквицы (первая буква первого абзаца) */
+    .story-text p:first-of-type::first-letter {
+        font-family: 'Playfair Display', serif; /* Или другой элегантный шрифт */
+        float: left;
+        font-size: 3.5rem;
+        line-height: 1;
+        padding-right: 10px;
+        color: #d4af37;
+        font-style: normal;
+    }
+
+    /* Блок миссии с золотой линией слева */
+    .mission-box {
+        border-left: 2px solid #d4af37;
+        padding-left: 25px;
+        margin-top: 3rem;
+        font-style: italic;
+        background: rgba(212, 175, 55, 0.03);
+        padding-top: 20px;
+        padding-bottom: 10px;
+    }
+
+    /* Остальные стили без изменений */
     .team-card img {
         filter: grayscale(100%);
         transition: 0.5s;
@@ -11,26 +48,34 @@
     .team-card:hover img {
         filter: grayscale(0%);
     }
-    .story-img {
-        border: 1px solid var(--gold);
-        padding: 10px;
-    }
 </style>
 
 <section class="py-5 mt-5">
     <div class="container">
         <!-- History -->
-        <div class="row align-items-center mb-5 pb-5">
-            <div class="col-md-6 mb-4">
-                <h2 class="display-4 mb-4 text-gold italic">Наша История</h2>
-                <p class="text-muted italic mb-4" style="line-height: 2;">
-                    {{ info.about_history }}
-                </p>
-                <h3 class="h5 text-gold uppercase mb-3">Наша миссия</h3>
-                <p class="text-muted">{{ info.about_mission }}</p>
-            </div>
-            <div class="col-md-6">
-                <img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974" class="img-fluid story-img shadow-lg" alt="Interior">
+        <div class="row justify-content-center mb-5 pb-5">
+            <div class="col-lg-10"> <!-- Ограничим ширину для лучшей читаемости -->
+                <h2 class="display-4 mb-5 text-gold text-center italic">Наша История</h2>
+
+                <div class="story-text">
+                    <!-- Фильтр linebreaks создаст теги <p> на месте переносов строк -->
+                    {{ info.about_history|linebreaks }}
+                </div>
+
+                <!-- Блок миссии -->
+                <div class="mission-box">
+                    <h3 class="h5 text-gold text-uppercase tracking-widest mb-3">Миссия NVK</h3>
+                    <div class="story-text" style="font-size: 1.2rem; color: #d4af37;">
+                        {{ info.about_mission|linebreaks }}
+                    </div>
+                </div>
+
+                <!-- Деликатное упоминание об аллергиях (если есть в info или текстом) -->
+                <div class="mt-5 text-center">
+                    <p class="small text-muted text-uppercase tracking-widest">
+                        <i class="bi bi-info-circle"></i> Мы с глубочайшим вниманием относимся к вашим предпочтениям и аллергиям. В меню предусмотрены замены.
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -50,7 +95,7 @@
                         {% endif %}
                     </div>
                     <h4 class="text-gold mb-1">{{ member.name }}</h4>
-                    <p class="text-muted small uppercase mb-3">{{ member.position }}</p>
+                    <p class="text-gold small uppercase mb-3">{{ member.position }}</p>
                     <p class="px-3 small italic">{{ member.bio }}</p>
                 </div>
                 {% empty %}

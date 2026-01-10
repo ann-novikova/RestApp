@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.core.exceptions import ValidationError
 from datetime import datetime
+from django.utils import timezone
 from django.shortcuts import render
 from django.views import View
 from .models import Table, Booking
@@ -29,6 +30,11 @@ class TableAvailabilityView(APIView):
             start_dt = datetime.strptime(f"{date_str} {start_str}", '%Y-%m-%d %H:%M')
             end_dt = datetime.strptime(f"{date_str} {end_str}", '%Y-%m-%d %H:%M')
 
+            if timezone.is_naive(start_dt):
+                start_dt = timezone.make_aware(start_dt)
+            if timezone.is_naive(end_dt):
+                end_dt = timezone.make_aware(end_dt)
+
             Booking.validate_times(start_dt, end_dt)
 
         except ValidationError as e:
@@ -54,6 +60,7 @@ class TableAvailabilityView(APIView):
 
         return Response({'tables': table_data})
 
+
 class BookingCreateView(APIView):
     """Создание брони. Если есть токен — привязываем к пользователю"""
     permission_classes = [permissions.AllowAny]
@@ -61,12 +68,28 @@ class BookingCreateView(APIView):
     def post(self, request):
         serializer = BookingSerializer(data=request.data, context={'request': request})
 
-        if serializer.is_valid():
+
+        if not serializer.is_valid():
+            return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
             user = request.user if request.user.is_authenticated else None
             serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            error_message = ""
+            if hasattr(e, 'message_dict'):
+                error_message = " ".join([f"{v[0]}" for k, v in e.message_dict.items()])
+            else:
+                error_message = e.messages[0]
+
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            print(f"Error saving booking: {e}")
+            return Response({"error": "Произошла внутренняя ошибка при сохранении"},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class BookingCancelView(APIView):
     """Отмена брони пользователем"""

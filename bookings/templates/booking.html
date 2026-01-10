@@ -1,378 +1,267 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<style>
-    .booking-header {
-        padding: 100px 0 50px;
-        text-align: center;
-        background: var(--dark-bg);
-    }
-
-    .step-container {
-        max-width: 1000px;
-        margin: 0 auto;
-        padding-bottom: 100px;
-    }
-
-    .booking-card {
-        background: #161616;
-        border: 1px solid #222;
-        padding: 40px;
-        margin-top: -30px;
-        position: relative;
-    }
-
-    /* СХЕМА ЗАЛА */
-    .restaurant-floor {
-        position: relative;
-        background: #0a0a0a;
-        border: 1px solid #222;
-        min-height: 600px;
-        margin-top: 20px;
-        padding: 60px 80px 40px 60px; /* Отступы под окна и бар */
-        overflow: hidden;
-    }
-
-    #tables-layout {
-        display: grid;
-        /* Создаем сетку, которая заполняет всё пространство */
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        grid-auto-rows: 150px;
-        gap: 20px;
-        width: 100%;
-        height: 100%;
-        align-items: center;
-        justify-items: center;
-    }
-
-    /* Видовые окна (Слева и Сверху) */
-    .window-view {
-        position: absolute;
-        z-index: 1;
-        pointer-events: none;
-    }
-    .window-top {
-        top: 0; left: 0; right: 0; height: 6px;
-        background: linear-gradient(to bottom, #5a7d8c, transparent);
-        border-top: 2px solid #87ceeb;
-        box-shadow: 0 5px 15px rgba(135, 206, 235, 0.1);
-    }
-    .window-left {
-        top: 0; left: 0; bottom: 0; width: 6px;
-        background: linear-gradient(to right, #5a7d8c, transparent);
-        border-left: 2px solid #87ceeb;
-    }
-
-    /* Барная стойка (Справа) */
-    .bar-counter {
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: 50px;
-        background: #111;
-        border-left: 2px solid var(--gold);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        writing-mode: vertical-rl;
-        color: var(--gold);
-        text-transform: uppercase;
-        letter-spacing: 8px;
-        font-size: 0.7rem;
-        opacity: 0.8;
-        box-shadow: -10px 0 20px rgba(0,0,0,0.5);
-    }
-
-    /* КРУГЛЫЕ СТОЛИКИ */
-    .table-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        z-index: 2;
-    }
-
-    /* Ритм расстановки: смещаем каждый второй ряд для естественности */
-    .table-wrapper:nth-child(even) {        transform: translateY(20px);
-    }
-
-    /* Имитация расположения "2 стола по 4, 1 по 2" через размеры в JS и стили */
-    .table-circle {
-        border-radius: 50%;
-        border: 2px solid #333;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        cursor: pointer;
-        position: relative;
-        background: #1a1a1a;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-
-    .table-circle.available:hover {
-        border-color: var(--gold);
-        transform: scale(1.1);
-        box-shadow: 0 0 20px rgba(197, 168, 114, 0.3);
-    }
-
-    .table-circle.occupied {
-        opacity: 0.2;
-        cursor: not-allowed;
-        background: #050505;
-    }
-
-    .table-number {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.1rem;
-        margin-bottom: -2px;
-        color: #fff;
-    }
-
-    .table-capacity {
-        font-size: 0.55rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--gold);
-        opacity: 0.7;
-    }
-
-    /* Размер столов */
-    .size-sm { width: 75px; height: 75px; }   /* 1-2 чел */
-    .size-md { width: 105px; height: 105px; } /* 3-4 чел */
-    .size-lg { width: 135px; height: 135px; } /* 5-6+ чел */
-
-    /* ПОЛЯ ФОРМЫ */
-    .form-control-nvk {
-        background: transparent;
-        border: none;
-        border-bottom: 1px solid #333;
-        border-radius: 0;
-        color: #fff;
-        padding: 12px 5px;
-        margin-bottom: 5px;
-    }
-
-    /* СВЕТЛЫЕ ИКОНКИ КАЛЕНДАРЯ И ЧАСОВ */
-    .form-control-nvk::-webkit-calendar-picker-indicator {
-        filter: invert(1) brightness(0.9);
-        cursor: pointer;
-    }
-
-    .form-control-nvk:focus {
-        background: transparent;
-        border-color: var(--gold);
-        box-shadow: none;
-        color: #fff;
-    }
-
-    .form-control-nvk::placeholder {
-    color: #6b6b6b;
-    opacity: 1;
-    }
-
-    .label-light { color: #e0e0e0 !important; font-weight: 300; letter-spacing: 0.5px; }
-    .error-message { color: #ff4d4d; font-size: 0.75rem; display: block; min-height: 18px; margin-bottom: 15px; }
-    .hidden { display: none; }
-</style>
+<link rel="stylesheet" href="{% static 'bootstrap.min.css' %}">
+<link rel="stylesheet" href="{% static 'booking.css' %}">
 
 <div class="booking-header">
     <div class="container">
-        <h1 class="display-4 italic">Резерв столика</h1>
-        <p class="text-gold uppercase tracking-widest small">Эксклюзивный гастрономический опыт</p>
+        <h1 class="display-4 fst-italic">Резерв столика</h1>
+        <p class="text-gold text-uppercase tracking-widest small">NVK Panoramic Experience</p>
     </div>
 </div>
 
-<div class="container step-container">
-    <div class="booking-card">
+<div class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="booking-card shadow-lg">
 
-        <!-- ШАГ 1 -->
-        <div id="step-1">
-            <h4 class="serif mb-4">1. Выберите дату и время</h4>
-            <div class="row">
-                <div class="col-md-4">
-                    <label class="small label-light mb-2 uppercase">Дата</label>
-                    <input type="date" id="book-date" class="form-control form-control-nvk" value="{{ today }}">
-                    <span class="error-message" id="error-date"></span>
-                </div>
-                <div class="col-md-4">
-                    <label class="small label-light mb-2 uppercase">Время начала</label>
-                    <input type="time" id="book-time" class="form-control form-control-nvk" value="19:00">
-                    <span class="error-message" id="error-start_time"></span>
-                </div>
-                <div class="col-md-4">
-                    <label class="small label-light mb-2 uppercase">Время ухода</label>
-                    <input type="time" id="book-end-time" class="form-control form-control-nvk" value="21:00">
-                    <span class="error-message" id="error-end_time"></span>
-                </div>
-            </div>
-            <button onclick="checkAvailability()" class="btn btn-gold w-100 mt-3">Показать доступные столики</button>
-            </div>
-
-        <!-- ШАГ 2: СХЕМА ЗАЛА -->
-        <div id="step-2" class="hidden">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h4 class="serif m-0">2. Выберите столик на схеме</h4>
-                <button onclick="showStep(1)" class="btn btn-link text-gold btn-sm">Назад</button>
-            </div>
-
-            <div class="restaurant-floor">
-                <!-- Окна -->
-                <div class="window-view window-top"></div>
-                <div class="window-view window-left"></div>
-
-                <!-- Бар -->
-                <div class="bar-counter">BAR COUNTER</div>
-
-                <!-- Сюда JavaScript вставит столики -->
-                <div id="tables-layout"></div>
-            </div>
-            <p class="text-center text-gold small mt-3">Столики у окна (слева и сверху) пользуются повышенным спросом</p>
-        </div>
-
-        <!-- ШАГ 3 -->
-        <div id="step-3" class="hidden">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="serif m-0">3. Детали бронирования</h4>
-                <button onclick="showStep(2)" class="btn btn-link text-gold btn-sm">Назад</button>
-            </div>
-            <div class="row justify-content-center">
-                <div class="col-md-8">
-                    <p id="summary" class="text-gold mb-4 small text-center uppercase tracking-widest"></p>
-                    <form id="booking-form">
-                        <div class="text-center mb-1">
-                            <label class="small label-light mb-2 uppercase">Количество гостей</label>
-                            <input type="number" id="cust-guests"
-                                   class="form-control form-control-nvk text-center mx-auto" style="max-width: 100px;"
-                                   value="2" min="1" required>
-                            <span class="error-message" id="error-guests_count"></span>
+                <!-- ШАГ 1 -->
+                <div id="step-1">
+                    <h4 class="fw-light mb-4 text-gold small text-uppercase">1. Параметры брони</h4>
+                    <div class="row g-4">
+                        <div class="col-md-4 text-start">
+                            <label class="small text-gold text-uppercase mb-2">Дата</label>
+                            <input type="date" id="book-date" class="form-control form-control-nvk" value="{{ today }}">
+                            <span class="error-message" id="error-date"></span>
                         </div>
-                        <input type="text" id="cust-name" class="form-control form-control-nvk" placeholder="ВАШЕ ИМЯ" required>
-                        <span class="error-message" id="error-guest_name"></span>
-                        <input type="tel" id="cust-phone" class="form-control form-control-nvk" placeholder="НОМЕР ТЕЛЕФОНА" required>
-                        <span class="error-message" id="error-guest_phone"></span>
-                        <textarea id="cust-comment" class="form-control form-control-nvk" placeholder="ПОЖЕЛАНИЯ (НЕОБЯЗАТЕЛЬНО)"></textarea>
-                        <span class="error-message" id="error-comment"></span>
-                        <button type="submit" class="btn btn-gold w-100 mt-4">Подтвердить резерв</button>
+                        <div class="col-md-4 text-start">
+                            <label class="small text-gold text-uppercase mb-2">Начало</label>
+                            <input type="time" id="book-time" class="form-control form-control-nvk" value="19:00">
+                            <span class="error-message" id="error-start_time"></span>
+                        </div>
+                        <div class="col-md-4 text-start">
+                            <label class="small text-gold text-uppercase mb-2">Окончание</label>
+                            <input type="time" id="book-end-time" class="form-control form-control-nvk" value="21:00">
+                            <span class="error-message" id="error-end_time"></span>
+                        </div>
+                    </div>
+                    <div id="date-error" class="text-danger small mt-3 text-center" style="display: none; font-weight: bold;"></div>
+                    <button type="button" onclick="checkAvailability()" class="btn btn-gold w-100 mt-5">Выбрать место на
+                        схеме
+                    </button>
+                </div>
+
+                <!-- ШАГ 2 -->
+                <div id="step-2" class="hidden text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-light m-0">2. Схема зала</h4>
+                        <button onclick="showStep(1)" class="btn btn-link text-gold btn-sm text-decoration-none">← К
+                            выбору времени
+                        </button>
+                    </div>
+
+                    <div class="restaurant-floor" id="floor-plan">
+                        <div class="window-view window-top"></div>
+                        <div class="window-view window-left"></div>
+
+                        <!-- БАР (статичный элемент) -->
+                        <div class="bar-counter">BAR</div>
+                    </div>
+                    <p class="text-center text-gold small mt-4 uppercase tracking-widest">Столики, расположенные у
+                        панорамных окон пользуются повышенным спросом
+                    </p>
+                </div>
+
+                <!-- ШАГ 3 -->
+                <div id="step-3" class="hidden">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-light m-0">3. Ваши данные</h4>
+                        <button onclick="showStep(2)" class="btn btn-link text-gold btn-sm text-decoration-none">← Назад
+                            к карте
+                        </button>
+                    </div>
+                    <div id="summary"
+                         class="alert border-secondary text-center text-gold small mb-4 bg-transparent"></div>
+                    <form id="booking-form" class="row justify-content-center">
+                        <div class="col-md-8 text-center">
+                            <label class="small text-gold text-uppercase mb-2">Количество гостей</label>
+                            <input type="number" id="cust-guests"
+                                   class="form-control form-control-nvk text-center mx-auto mb-4"
+                                   style="max-width: 80px;" value="2">
+
+                            <input type="text" id="cust-name" class="form-control form-control-nvk mb-3"
+                                   placeholder="ВАШЕ ИМЯ" required>
+                            <input type="tel" id="cust-phone" class="form-control form-control-nvk mb-3"
+                                   placeholder="НОМЕР ТЕЛЕФОНА" required>
+                            <textarea id="cust-comment" class="form-control form-control-nvk mb-4"
+                                      placeholder="ПОЖЕЛАНИЯ"></textarea>
+
+                            <button type="submit" class="btn btn-gold w-100 py-3">Подтвердить резерв</button>
+                        </div>
                     </form>
                 </div>
-            </div>
-        </div>
 
-        <!-- РЕЗУЛЬТАТ -->
-        <div id="step-success" class="hidden text-center py-5">
-            <h2 class="text-gold serif">Благодарим вас!</h2>
-            <p class="mt-3">Ваш запрос на бронирование принят. Менеджер NVK свяжется с вами для подтверждения.</p>
-            <a href="/" class="btn btn-gold mt-4">На главную</a>
+                <!-- УСПЕХ -->
+                <div id="step-success" class="hidden text-center py-5">
+                    <h2 class="text-gold fw-light">Заявка принята</h2>
+                    <p class="text-muted">Ожидайте звонка менеджера для подтверждения столика.</p>
+                    <a href="/" class="btn btn-outline-light mt-4 px-5 rounded-0">На главную</a>
+                </div>
+
+            </div>
         </div>
     </div>
 </div>
 
+<script src="{% static 'bootstrap.min.js' %}"></script>
 <script>
-    let selectedTableId = null;
+    var selectedTableId = null;
 
-    function clearErrors() { document.querySelectorAll('.error-message').forEach(el => el.innerText = ''); }
+    // Координаты для 7 столов в сетке 6x5
+    var tableCoords = [
+        {r: 1, c: 1}, // 1. Окно (Угол)
+        {r: 1, c: 3}, // 2. СВЕРХУ от бара
+        {r: 1, c: 5}, // 3. Окно (Дальний угол)
+        {r: 3, c: 1}, // 4. СЛЕВА от бара (Окно)
+        {r: 6, c: 3}, // 5. СПРАВА от бара
+        {r: 6, c: 5}, // 6. СНИЗУ от бара
+        {r: 6, c: 1}  // 7. Окно (Низ лево)
+    ];
 
-    function displayErrors(errors) {
-        clearErrors();
-        for (let field in errors) {
-            const errorElement = document.getElementById('error-' + field);
-            if (errorElement) {
-                errorElement.innerText = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
-    } else if (['non_field_errors', '__all__', 'error'].includes(field)) {
-                alert(Array.isArray(errors[field]) ? errors[field][0] : errors[field]);
-            }
-        }
+
+    function showStep(s) {
+        document.getElementById('step-1').className = 'hidden';
+        document.getElementById('step-2').className = 'hidden';
+        document.getElementById('step-3').className = 'hidden';
+        document.getElementById('step-success').className = 'hidden';
+        document.getElementById('step-' + s).className = '';
     }
 
-    document.getElementById('book-time').addEventListener('change', function() {
-        const startTime = this.value;
-        if (startTime) {
-            let [hours, minutes] = startTime.split(':');
-            let endHours = (parseInt(hours) + 2) % 24;
-            document.getElementById('book-end-time').value = `${String(endHours).padStart(2, '0')}:${minutes}`;
-        }
-    });
-
-    function showStep(step) {
-        document.querySelectorAll('#step-1, #step-2, #step-3, #step-success').forEach(el => el.classList.add('hidden'));
-        document.getElementById('step-' + step).classList.remove('hidden');
-        if (step === 1) clearErrors();
-    }
+    document.getElementById('book-time').onchange = function() {
+        var t = this.value.split(':');
+        var h = (parseInt(t[0]) + 2) % 24;
+        document.getElementById('book-end-time').value = (h < 10 ? '0' + h : h) + ':' + t[1];
+    };
 
     async function checkAvailability() {
-        clearErrors();
-        const date = document.getElementById('book-date').value;
-        const start = document.getElementById('book-time').value;
-        const end = document.getElementById('book-end-time').value;
+    const dateInput = document.getElementById('book-date');
+    const errorBlock = document.getElementById('date-error');
 
-        if (!date || !start || !end) {
-            document.getElementById('error-date').innerText = "Выберите дату и время";
-            return;
+    // Получаем значения полей
+    const date = dateInput.value;
+    const start = document.getElementById('book-time').value;
+    const end = document.getElementById('book-end-time').value;
+
+    // Сброс состояния ошибок
+    errorBlock.style.display = 'none';
+    dateInput.style.borderColor = '';
+
+try {
+        const response = await fetch(`/bookings/check/?date=${date}&start=${start}&end=${end}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            // 1. Пытаемся достать текст ошибки динамически
+            let errorMessage = "Выбранное время недоступно"; // Текст по умолчанию
+
+            if (typeof data === 'object') {
+                // Если пришло сообщение в ключе 'error'
+                if (data.error) {
+                    errorMessage = data.error;
+                }
+                // Если пришли ошибки по полям (например, data.end_time)
+                else {
+                    // Object.values(data) соберет все массивы ошибок: [["Ошибка1"], ["Ошибка2"]]
+                    // flat() превратит это в плоский массив: ["Ошибка1", "Ошибка2"]
+                    const allErrors = Object.values(data).flat();
+                    if (allErrors.length > 0) {
+                        errorMessage = allErrors[0]; // Берем самую первую ошибку
+                    }
+                }
+            }
+
+            throw new Error(errorMessage);
         }
 
-        try {
-            const response = await fetch(`/bookings/check/?date=${date}&start=${start}&end=${end}`);
-            const data = await response.json();
+        // Если всё успешно:
+        renderTables(data.tables, date, start, end);
+        showStep(2);
 
-            if (!response.ok) { displayErrors(data); return; }
-
-            const layout = document.getElementById('tables-layout');
-            layout.innerHTML = '';
-
-            data.tables.forEach(table => {
-                let sizeClass = 'size-md';
-                if (table.capacity <= 2) sizeClass = 'size-sm';
-                if (table.capacity >= 5) sizeClass = 'size-lg';
-
-                const tableDiv = document.createElement('div');
-                tableDiv.className = 'table-wrapper';
-                tableDiv.innerHTML = `
-                    <div class="table-circle ${sizeClass} ${table.is_available ? 'available' : 'occupied'}"
-                         onclick="${table.is_available ? `selectTable(${table.id}, '${table.number}')` : ''}">
-                        <span class="table-number">№${table.number}</span>
-                        <span class="table-capacity">${table.capacity} чел</span>
-                    </div>
-                `;
-                layout.appendChild(tableDiv);
-            });
-
-            showStep(2);
-        } catch (e) { alert("Ошибка при проверке доступности"); }
+    } catch (err) {
+        // Здесь err.message будет содержать "Минимальное время бронирования — 2 часа."
+        errorBlock.innerText = err.message;
+        errorBlock.style.display = 'block';
+        dateInput.style.borderColor = 'red';
     }
+}
 
-    function selectTable(id, number) {
-        selectedTableId = id;
-        const date = document.getElementById('book-date').value;
-        const start = document.getElementById('book-time').value;
-        const end = document.getElementById('book-end-time').value;
-        document.getElementById('summary').innerText = `Столик №${number} • ${date} • ${start} - ${end}`;
-        showStep(3);
-    }
+function renderTables(tables, date, start, end) {
+    const floor = document.getElementById('floor-plan');
 
-    document.getElementById('booking-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const date = document.getElementById('book-date').value;
-        const payload = {
-            table: selectedTableId,
-            start_time: `${date}T${document.getElementById('book-time').value}`,
-            end_time: `${date}T${document.getElementById('book-end-time').value}`,
-            guests_count: document.getElementById('cust-guests').value,
-            customer_name: document.getElementById('cust-name').value,
-            customer_phone: document.getElementById('cust-phone').value,
-            comment: document.getElementById('cust-comment').value
-        };
+    // 1. Очищаем старые столики (удаляем только элементы с классом .table-wrapper)
+    floor.querySelectorAll('.table-wrapper').forEach(el => el.remove());
 
-        try {
-            const response = await fetch('/bookings/create/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-                body: JSON.stringify(payload)
-            });
-            if (response.ok) { showStep('success'); }
-            else { displayErrors(await response.json()); }
-        } catch (e) { alert("Ошибка при отправке"); }
-    }
+    // 2. Отрисовываем новые столики
+    // Используем только первые 7 столов, согласно вашему массиву координат tableCoords
+    tables.slice(0, 7).forEach((table, index) => {
+        const pos = tableCoords[index];
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-wrapper';
+        wrapper.style.gridRow = pos.r;
+        wrapper.style.gridColumn = pos.c;
+
+        // Определяем размер кружка
+        let sizeClass = 'size-md';
+        if (table.capacity <= 2) sizeClass = 'size-sm';
+        else if (table.capacity >= 5) sizeClass = 'size-lg';
+
+        const statusClass = table.is_available ? 'available' : 'occupied';
+        const tooltip = !table.is_available ? ' title="Стол забронирован"' : '';
+
+        // Наполняем HTML через шаблонную строку
+        wrapper.innerHTML = `
+            <div class="table-circle ${sizeClass} ${statusClass}" ${tooltip}>
+                <span class="table-number">№${table.number}</span>
+                <span class="table-capacity">${table.capacity} чел</span>
+            </div>
+        `;
+
+        // Вешаем клик только на свободные столы
+        if (table.is_available) {
+            wrapper.onclick = () => {
+                selectedTableId = table.id;
+                document.getElementById('summary').innerText =
+                    `СТОЛ №${table.number} | ${date} | ${start} - ${end}`;
+                showStep(3);
+            };
+        }
+
+        floor.appendChild(wrapper);
+    });
+}
+
+    document.getElementById('booking-form').onsubmit = function(e) {
+    e.preventDefault();
+
+    var date = document.getElementById('book-date').value;
+    var payload = {
+        table: selectedTableId,
+        start_time: date + 'T' + document.getElementById('book-time').value,
+        end_time: date + 'T' + document.getElementById('book-end-time').value,
+        guests_count: document.getElementById('cust-guests').value,
+        customer_name: document.getElementById('cust-name').value,
+        customer_phone: document.getElementById('cust-phone').value,
+        comment: document.getElementById('cust-comment').value
+    };
+
+    fetch('/bookings/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(payload)
+    }).then(function(res) {
+        return res.json().then(data => {
+            if (res.ok) {
+                showStep('success');
+            } else {
+                alert(data.error || "Ошибка на сервере");
+            }
+        });
+    });
+};
 </script>
 {% endblock %}
