@@ -1,21 +1,26 @@
 from rest_framework import serializers
 from .models import User
-from bookings.models import Booking
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone_number', 'password']
+        fields = ['first_name', 'last_name', 'phone', 'email']
+        read_only_fields = ['email']
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
 
-class UserBookingHistorySerializer(serializers.ModelSerializer):
-    """Сериализатор для отображения истории бронирований в профиле"""
-    table_number = serializers.ReadOnlyField(source='table.number')
 
-    class Meta:
-        model = Booking
-        fields = ['id', 'table_number', 'date', 'time', 'duration','status']
+class RegisterSerializer(serializers.ModelSerializer):
+
+    def create(self, validated_data):
+        user = User.objects.create_user(**validated_data)
+
+        refresh = RefreshToken.for_user(user)
+        user.tokens = {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+        return user

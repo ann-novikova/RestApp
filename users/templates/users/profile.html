@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Контейнер с отступами -->
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <!-- ГЛАВНАЯ КАРТОЧКА (Стиль прописан через атрибут style) -->
+            <div class="p-4 p-md-5"
+                 style="background: rgba(20, 20, 20, 0.95); border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+
+                <!-- ЗАГОЛОВОК И КНОПКИ -->
+                <div class="d-flex justify-content-between align-items-center mb-5">
+                    <div>
+                        <h2 style="color: #d4af37; font-style: italic; margin-bottom: 0;">Личный Кабинет</h2>
+                        <p style="color: #6c757d; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px;">
+                            NVK Panoramic Guest</p>
+                    </div>
+
+                    <!-- Блок с кнопкой РЕДАКТИРОВАТЬ -->
+                    <div id="profile-actions">
+                        <button onclick="toggleEdit(true)"
+                                class="btn btn-sm px-4"
+                                style="color: #d4af37; border: 1px solid #d4af37; background: transparent;">
+                            РЕДАКТИРОВАТЬ
+                        </button>
+                    </div>
+
+                    <!-- Блок с кнопками ОТМЕНА и СОХРАНИТЬ (изначально скрыт через d-none) -->
+                    <div id="edit-actions" class="d-none">
+                        <button onclick="toggleEdit(false)"
+                                class="btn btn-link text-muted btn-sm text-decoration-none me-3">ОТМЕНА
+                        </button>
+                        <button onclick="saveProfile()" class="btn btn-sm px-4"
+                                style="background-color: #d4af37; color: #000; border: none; font-weight: bold;">
+                            СОХРАНИТЬ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ФОРМА -->
+                <form id="profile-form">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label style="color: #d4af37; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 8px; display: block;">Имя</label>
+                            <input type="text" id="user-first-name" class="form-control"
+                                   style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(212,175,55,0.2); border-radius: 0;"
+                                   value="..." disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label style="color: #d4af37; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 8px; display: block;">Телефон</label>
+                            <input type="tel" id="user-phone" class="form-control"
+                                   style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(212,175,55,0.2); border-radius: 0;"
+                                   value="..." disabled>
+                        </div>
+                        <div class="col-md-12">
+                            <label style="color: #d4af37; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 8px; display: block;">Email</label>
+                            <input type="email" id="user-email" class="form-control"
+                                   style="background: transparent; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 0;"
+                                   value="..." disabled>
+                        </div>
+                    </div>
+                </form>
+
+                <hr style="border-color: rgba(212, 175, 55, 0.2); margin: 3rem 0;">
+
+                <!-- БРОНИРОВАНИЯ -->
+                <h4 style="color: #d4af37; font-weight: 300; margin-bottom: 1.5rem;">ИСТОРИЯ ВИЗИТОВ</h4>
+                <div id="bookings-container">
+                    <!-- Будет заполнено через JS -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // Вспомогательная функция для CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Переключение режимов (Просмотр / Редактирование)
+    function toggleEdit(isEditing) {
+        const profileActions = document.getElementById('profile-actions');
+        const editActions = document.getElementById('edit-actions');
+        const inputs = ['user-first-name', 'user-phone'];
+
+        if (isEditing) {
+            // Показываем кнопки сохранения, скрываем кнопку редактирования
+            profileActions.classList.add('d-none');
+            editActions.classList.remove('d-none');
+
+            // Активируем поля ввода
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                el.disabled = false;
+                el.style.border = '1px solid #d4af37'; // Делаем рамку ярче при редактировании
+                el.style.background = 'rgba(255,255,255,0.1)';
+            });
+        } else {
+            // Скрываем кнопки сохранения, показываем кнопку редактирования
+            profileActions.classList.remove('d-none');
+            editActions.classList.add('d-none');
+
+            // Деактивируем поля ввода
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                el.disabled = true;
+                el.style.border = '1px solid rgba(212,175,55,0.2)';
+                el.style.background = 'rgba(255,255,255,0.05)';
+            });
+
+            loadProfile(); // Перезагружаем данные, чтобы сбросить изменения при отмене
+        }
+    }
+
+async function tryRefreshToken() {
+    const refresh = localStorage.getItem('refresh_token');
+    if (!refresh) return false;
+
+    try {
+        const response = await fetch('/users/token/refresh/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh: refresh })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('access_token', data.access);
+            console.log("Токен успешно обновлен");
+            return true;
+        }
+    } catch (e) {
+        console.error("Не удалось обновить токен");
+    }
+    return false;
+}
+    // Загрузка данных профиля и броней
+    async function loadProfile() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/users/login/';
+            return;
+        }
+
+        try {
+            const response = await fetch('/users/profile/api/', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.status === 401) {
+    const isRefreshed = await tryRefreshToken();
+    if (isRefreshed) {
+        loadProfile(); // Пробуем загрузить еще раз с новым токеном
+    } else {
+        handleSessionExpired(); // Если и рефреш не помог - выкидываем на логин
+    }
+}
+
+            if (response.ok) {
+                const data = await response.json();
+
+                // Заполняем поля
+                document.getElementById('user-first-name').value = data.first_name || '';
+                document.getElementById('user-phone').value = data.phone || '';
+                document.getElementById('user-email').value = data.email || '';
+
+                // Рендерим бронирования
+                const container = document.getElementById('bookings-container');
+                if (data.bookings && data.bookings.length > 0) {
+                    container.innerHTML = bookings.map(b => `
+    <div class="booking-item p-3 mb-3" style="border-left: 2px solid #d4af37; background: rgba(255,255,255,0.02);">
+        <div class="row align-items-center w-100 g-0">
+
+            <!-- ЛЕВО: Номер стола -->
+            <div class="col-4 text-start">
+                <div class="text-white fw-bold">СТОЛ №${b.table_number || b.table}</div>
+            </div>
+
+            <!-- ЦЕНТР: Дата и время -->
+            <div class="col-4 text-center">
+                <label class="small text-gold d-block mb-1" style="font-size: 0.7rem; text-transform: uppercase; color: #d4af37;">Дата, время</label>
+                <div class="small text-white">
+                    ${new Date(b.start_time).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </div>
+            </div>
+
+            <!-- ПРАВО: Гости -->
+            <div class="col-4 text-end">
+                <span class="status-badge" style="border: 1px solid #d4af37; color: #d4af37; padding: 4px 10px; font-size: 0.75rem; text-transform: uppercase; display: inline-block;">
+                    ${b.guests_count} гостей
+                </span>
+            </div>
+
+        </div>
+    </div>
+`).join('');
+                } else {
+                    container.innerHTML = '<p class="text-gold italic">У вас пока нет активных бронирований.</p>';
+                }
+            }
+        } catch (err) {
+            console.error("Ошибка загрузки:", err);
+        }
+    }
+
+    // Сохранение изменений
+    async function saveProfile() {
+        const token = localStorage.getItem('access_token');
+        const updatedData = {
+            first_name: document.getElementById('user-first-name').value,
+            phone: document.getElementById('user-phone').value
+        };
+
+        try {
+            const response = await fetch('/users/profile/update/', {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(updatedData)
+            });
+
+            if (response.ok) {
+                toggleEdit(false);
+                alert("Данные успешно обновлены");
+            } else {
+                const errData = await response.json();
+                alert("Ошибка: " + JSON.stringify(errData));
+            }
+        } catch (err) {
+            alert("Ошибка сети");
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+{% endblock %}

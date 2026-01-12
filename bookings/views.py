@@ -63,7 +63,15 @@ class TableAvailabilityView(APIView):
 
 class BookingCreateView(APIView):
     """Создание брони. Если есть токен — привязываем к пользователю"""
+    queryset = Booking.objects.all()
+    serializer_class = BookingSerializer
     permission_classes = [permissions.AllowAny]
+
+    def perform_create(self, serializer):
+        if self.request.user.is_authenticated:
+            serializer.save(user=self.request.user)
+        else:
+            serializer.save()
 
     def post(self, request):
         serializer = BookingSerializer(data=request.data, context={'request': request})

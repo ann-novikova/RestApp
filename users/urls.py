@@ -2,13 +2,18 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.permissions import AllowAny
 from users.apps import UsersConfig
-from .views import RegisterView, UserProfileView
+from .views import RegisterView, UserProfileView, LoginHTMLView, RegisterHTMLView, ProfileHTMLView, UserUpdateAPIView
 
 app_name = UsersConfig.name
 
 urlpatterns = [
-    path("login/", TokenObtainPairView.as_view(permission_classes=(AllowAny,)), name="login"),
+    path("api/token/", TokenObtainPairView.as_view(permission_classes=(AllowAny,)), name="token_api"),
     path("token/refresh/", TokenRefreshView.as_view(permission_classes=(AllowAny,)), name="token_refresh"),
-    path("register/", RegisterView.as_view(), name="register"),
-    path("profile/", UserProfileView.as_view(), name="profile"),
+    path("api/register/", RegisterView.as_view(), name="register_api"),
+    path("profile/api/", UserProfileView.as_view(), name="profile_api"),
+    # HTML страницы (для браузера)
+    path("login/", LoginHTMLView.as_view(), name="login"),
+    path("register/", RegisterHTMLView.as_view(), name="register"),
+    path("profile/", ProfileHTMLView.as_view(), name="profile"),
+    path('profile/update/', UserUpdateAPIView.as_view(), name='profile-update'),
 ]
