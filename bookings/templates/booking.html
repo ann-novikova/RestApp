@@ -107,194 +107,298 @@
 
 <script src="{% static 'bootstrap.min.js' %}"></script>
 <script>
-    // 1. Вспомогательная функция для CSRF-токена (нужна для POST запросов)
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-async function tryRefreshToken() {
-    const refresh = localStorage.getItem('refresh_token');
-    if (!refresh) return false;
-
-    try {
-        const response = await fetch('/users/token/refresh/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh: refresh })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            localStorage.setItem('access_token', data.access);
-            return true;
-        }
-    } catch (e) { console.error("Refresh error", e); }
-    return false;
-}
-
-async function loadUserProfile() {
-    const token = localStorage.getItem('access_token');
-    if (!token) return;
-
-    try {
-        const response = await fetch('/users/profile/api/', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            const userData = await response.json();
-            if (userData.first_name) document.getElementById('cust-name').value = userData.first_name;
-            if (userData.phone) document.getElementById('cust-phone').value = userData.phone;
-        }
-        else if (response.status === 401) {
-            // Если токен просрочен, пробуем обновить и вызвать функцию еще раз
-            const refreshed = await tryRefreshToken();
-            if (refreshed) loadUserProfile();
-        }
-    } catch (err) { console.error("Ошибка при загрузке профиля:", err); }
-}
-
-document.addEventListener('DOMContentLoaded', loadUserProfile);
-
-var selectedTableId = null;
-
-var tableCoords = [
-    {r: 1, c: 1}, {r: 1, c: 3}, {r: 1, c: 5},
-    {r: 3, c: 1}, {r: 6, c: 3}, {r: 6, c: 5}, {r: 6, c: 1}
-];
-
-function showStep(s) {
-    document.getElementById('step-1').classList.add('hidden');
-    document.getElementById('step-2').classList.add('hidden');
-    document.getElementById('step-3').classList.add('hidden');
-    document.getElementById('step-success').classList.add('hidden');
-
-    // Убираем hidden у нужного шага
-    const currentStep = document.getElementById('step-' + s);
-    if (currentStep) currentStep.classList.remove('hidden');
-}
-
-// Авто-подсчет времени окончания
-document.getElementById('book-time').onchange = function() {
-    var t = this.value.split(':');
-    var h = (parseInt(t[0]) + 2) % 24;
-    document.getElementById('book-end-time').value = (h < 10 ? '0' + h : h) + ':' + t[1];
-};
-
-// ШАГ 1: Проверка доступности
-async function checkAvailability() {
-    const dateInput = document.getElementById('book-date');
-    const errorBlock = document.getElementById('date-error');
-    const date = dateInput.value;
-    const start = document.getElementById('book-time').value;
-    const end = document.getElementById('book-end-time').value;
-
-    errorBlock.style.display = 'none';
-
-    try {
-        const response = await fetch(`/bookings/check/?date=${date}&start=${start}&end=${end}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || "Ошибка проверки");
-        }
-
-        renderTables(data.tables, date, start, end);
-        showStep(2);
-    } catch (err) {
-        errorBlock.innerText = err.message;
-        errorBlock.style.display = 'block';
-    }
-}
-
-// ШАГ 2: Отрисовка столов
-function renderTables(tables, date, start, end) {
-    const floor = document.getElementById('floor-plan');
-    floor.querySelectorAll('.table-wrapper').forEach(el => el.remove());    tables.slice(0, 7).forEach((table, index) => {
-        const pos = tableCoords[index];
-        const wrapper = document.createElement('div');
-        wrapper.className = 'table-wrapper';
-        wrapper.style.gridRow = pos.r;
-        wrapper.style.gridColumn = pos.c;
-
-        let sizeClass = table.capacity <= 2 ? 'size-sm' : (table.capacity >= 5 ? 'size-lg' : 'size-md');
-        const statusClass = table.is_available ? 'available' : 'occupied';
-
-        wrapper.innerHTML = `
-            <div class="table-circle ${sizeClass} ${statusClass}">
-                <span class="table-number">№${table.number}</span>
-                <span class="table-capacity">${table.capacity} чел</span>
-            </div>
-        `;
-
-        if (table.is_available) {
-            wrapper.onclick = () => {
-                selectedTableId = table.id;
-                document.getElementById('summary').innerText = `СТОЛ №${table.number} | ${date} | ${start} - ${end}`;
-                showStep(3);
-            };
-        }
-        floor.appendChild(wrapper);
-    });
-}
-
-// ШАГ 3: Отправка брони
-document.getElementById('booking-form').onsubmit = async function(e) {
-    e.preventDefault();
-
-    const token = localStorage.getItem('access_token');
-    const date = document.getElementById('book-date').value;
-
-    const payload = {
-        table: selectedTableId,
-        start_time: date + 'T' + document.getElementById('book-time').value,
-        end_time: date + 'T' + document.getElementById('book-end-time').value,
-        guests_count: document.getElementById('cust-guests').value,
-        customer_name: document.getElementById('cust-name').value,
-        customer_phone: document.getElementById('cust-phone').value,
-        comment: document.getElementById('cust-comment').value
+   var selectedTableId = null;
+    const tableCoords = [ // Координаты столиков на схеме
+        {r: 1, c: 1}, {r: 1, c: 3}, {r: 1, c: 5},
+        {r: 3, c: 1}, {r: 6, c: 3}, {r: 6, c: 5}, {r: 6, c: 1}
+    ];
+    const API_URLS = {
+        checkAvailability: '/bookings/check/',
+        loginAPI: '/users/api/token/',
+        refresh: '/users/token/refresh/',
+        profileAPI: '/users/profile/api/', // API для получения данных профиля
+        loginPage: "{% url 'users:login' %}", // URL страницы входа
+        profilePage: "{% url 'users:profile' %}", // URL страницы профиля
+        createBooking: '/bookings/create/'
     };
 
-    const headers = {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-    };
-
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+    // --- Функции для работы с JWT ---
+    function getCookie(name) {
+        // ... (ваш код getCookie остается прежним) ...
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
 
-    try {
-        const res = await fetch('/bookings/create/', {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(payload)
-        });
+    async function tryRefreshToken() {
+        const refresh = localStorage.getItem('refresh_token');
+        if (!refresh) return false;
 
-        const data = await res.json();
+        try {
+            const response = await fetch(API_URLS.refresh, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh: refresh })
+            });
 
-        if (res.ok) {
-            showStep('success');
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('access_token', data.access);
+                return true;
+            }
+        } catch (e) { console.error("Refresh error", e); }
+        return false;
+    }
+
+    async function loadUserProfile() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            updateNavbar(); // Обновляем видимость кнопок, даже если нет токена
+            return;
+        }
+
+        try {
+            const response = await fetch(API_URLS.profileAPI, {
+                method: 'GET',
+                headers: {'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const userData = await response.json();
+                if (userData.first_name) document.getElementById('cust-name').value = userData.first_name;
+                if (userData.phone) document.getElementById('cust-phone').value = userData.phone;
+                updateNavbar(); // Если профиль загружен, значит пользователь авторизован
+            } else if (response.status === 401) {
+                const refreshed = await tryRefreshToken();
+                if (refreshed) {
+                    loadUserProfile(); // Повторяем запрос с новым токеном
+                } else {
+                    updateNavbar(); // Не удалось обновить токен, считаем что пользователь не авторизован
+                }
+            } else {
+                updateNavbar(); // Другая ошибка API, тоже считаем неавторизованным
+            }
+        } catch (err) {
+            console.error("Ошибка при загрузке профиля:", err);
+            updateNavbar(); // Ошибка сети, обновляем видимость кнопок
+        }
+    }
+
+    // --- Функции для управления навигацией (видимость кнопок) ---
+    function updateNavbar() {
+        const token = localStorage.getItem('access_token');
+        const loginLink = document.querySelector(`a[href="${API_URLS.loginPage}"]`);
+        const registerLink = document.querySelector(`a[href="${API_URLS.loginPage.replace('/login/', '/register/')}"]`); // Предполагая, что register URL похож
+        const profileLink = document.querySelector(`a[href="${API_URLS.profilePage}"]`);
+        const logoutButton = document.querySelector('button[onclick*="logout"]');
+
+        const loginElements = [loginLink?.parentElement, registerLink?.parentElement];
+        const profileElements = [profileLink?.parentElement, logoutButton?.parentElement]; // .parentElement нужен, чтобы управлять display:none/block
+
+        if (token) {
+            loginElements.forEach(el => { if (el) el.style.display = 'none'; });
+            profileElements.forEach(el => { if (el) el.style.display = 'block'; });
         } else {
-            alert(data.error || "Ошибка при создании бронирования");
+            loginElements.forEach(el => { if (el) el.style.display = 'block'; });
+html
+
+            profileElements.forEach(el => { if (el) el.style.display = 'none'; });
         }
-    } catch (err) {
-        alert("Произошла ошибка при отправке запроса");
     }
-};
+
+    // --- Функции для управления шагами формы ---
+    function showStep(s) {
+        document.getElementById('step-1').classList.add('hidden');
+        document.getElementById('step-2').classList.add('hidden');
+        document.getElementById('step-3').classList.add('hidden');
+        document.getElementById('step-success').classList.add('hidden');
+
+        const currentStep = document.getElementById('step-' + s);
+        if (currentStep) currentStep.classList.remove('hidden');
+    }
+
+    // --- Функции для очистки и отображения ошибок ---
+    function clearErrors() {
+        document.querySelectorAll('.error-message').forEach(span => {
+            span.innerText = '';
+            span.style.display = 'none';
+        });
+        const dateErrorBlock = document.getElementById('date-error');
+        if (dateErrorBlock) {
+            dateErrorBlock.innerText = '';
+            dateErrorBlock.style.display = 'none';
+        }
+    }
+
+    function displayErrors(errors) {
+        clearErrors();
+        if (!errors) return;
+
+        for (const fieldName in errors) {
+            const errorSpan = document.getElementById(`error-${fieldName}`);
+            if (errorSpan && errors[fieldName].length > 0) {
+                errorSpan.innerText = errors[fieldName][0];
+                errorSpan.style.color = '#dc3545';
+                errorSpan.style.display = 'block';
+            }
+        }
+
+        if (errors.non_field_errors && errors.non_field_errors.length > 0) {
+             const dateErrorBlock = document.getElementById('date-error');
+             if (dateErrorBlock) {
+                 dateErrorBlock.innerText = errors.non_field_errors[0];
+                 dateErrorBlock.style.display = 'block';
+             }
+        } else if (errors.error) { // Обработка общего сообщения об ошибке
+             const dateErrorBlock = document.getElementById('date-error');
+             if (dateErrorBlock) {
+                 dateErrorBlock.innerText = errors.error;
+                 dateErrorBlock.style.display = 'block';
+             }
+        }
+    }
+
+    // --- Функции для логики формы бронирования ---
+
+    // Авто-подсчет времени окончания
+    document.getElementById('book-time').onchange = function() {
+        var t = this.value.split(':');
+        var h = (parseInt(t[0]) + 2) % 24;
+        document.getElementById('book-end-time').value = (h < 10 ? '0' + h : h) + ':' + t[1];
+    };
+
+    // ШАГ 1: Проверка доступности
+    async function checkAvailability() {
+        clearErrors();
+        const date = document.getElementById('book-date').value;
+        const start = document.getElementById('book-time').value;
+        const end = document.getElementById('book-end-time').value;
+
+        try {
+            const response = await fetch(`${API_URLS.checkAvailability}?date=${date}&start=${start}&end=${end}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                displayErrors(data.errors || data);
+                throw new Error("Ошибка проверки доступности");
+            }
+
+            renderTables(data.tables, date, start, end);
+            showStep(2);
+        } catch (err) {
+            console.error("Ошибка в checkAvailability:", err);
+            // Ошибки уже отображены через displayErrors, если они пришли с сервера
+        }
+    }
+
+    // ШАГ 2: Отрисовка столов
+    function renderTables(tables, date, start, end) {
+        const floor = document.getElementById('floor-plan');
+        // Удаляем предыдущие столики, если они были
+        floor.querySelectorAll('.table-wrapper').forEach(el => el.remove());
+
+        // Отрисовываем только первые 7 столиков (по количеству координат)
+        tables.slice(0, tableCoords.length).forEach((table, index) => {
+            const pos = tableCoords[index];
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-wrapper';
+            wrapper.style.gridRow = pos.r;
+            wrapper.style.gridColumn = pos.c;
+
+            let sizeClass = table.capacity <= 2 ? 'size-sm' : (table.capacity >= 5 ? 'size-lg' : 'size-md');
+            const statusClass = table.is_available ? 'available' : 'occupied';
+
+            wrapper.innerHTML = `
+                <div class="table-circle ${sizeClass} ${statusClass}">
+                    <span class="table-number">№${table.number}</span>
+                    <span class="table-capacity">${table.capacity} чел</span>
+                </div>
+            `;
+
+            if (table.is_available) {
+                wrapper.onclick = () => {
+                    selectedTableId = table.id;
+                    document.getElementById('summary').innerText = `СТОЛ №${table.number} | ${date} | ${start} - ${end}`;
+                    showStep(3);
+                };
+            }
+            floor.appendChild(wrapper);
+        });
+    }
+
+    // ШАГ 3: Отправка брони
+    document.getElementById('booking-form').onsubmit = async function(e) {
+        e.preventDefault();
+        clearErrors();
+
+        const token = localStorage.getItem('access_token');const date = document.getElementById('book-date').value;
+
+        if (!selectedTableId) {
+            alert("Пожалуйста, выберите столик на схеме.");
+            return;
+        }
+
+        const payload = {
+            table: selectedTableId,
+            start_time: date + 'T' + document.getElementById('book-time').value,
+            end_time: date + 'T' + document.getElementById('book-end-time').value,
+            guests_count: document.getElementById('cust-guests').value,
+            customer_name: document.getElementById('cust-name').value,
+            customer_phone: document.getElementById('cust-phone').value,
+            comment: document.getElementById('cust-comment').value
+        };
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        try {
+            const res = await fetch(API_URLS.createBooking, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                showStep('success');
+            } else {
+                displayErrors(data.errors || data);
+            }
+        } catch (err) {
+            alert("Произошла ошибка при отправке запроса: " + err.message);
+            console.error("Ошибка в onsubmit booking-form:", err);
+        }
+    };
+
+    // --- Инициализация при загрузке страницы ---
+    document.addEventListener('DOMContentLoaded', () => {
+        loadUserProfile(); // Загружаем профиль пользователя и обновляем навигацию
+    });
+
+    // --- Функция выхода ---
+    function logout() {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = API_URLS.loginPage; // Используем URL из констант
+    }
+
 </script>
 {% endblock %}
