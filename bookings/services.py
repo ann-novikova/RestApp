@@ -31,7 +31,7 @@ class BookingService:
         table_data = []
 
         overlapping_bookings = Booking.objects.filter(
-            status__in=['pending', 'confirmed'],
+            status__in=['confirmed'],
             start_time__lt=end_dt,
             end_time__gt=start_dt
         )

@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
+
 class MyUserManager(BaseUserManager):
 
     def create_user(self, email, password=None, **extra_fields):
@@ -16,6 +17,8 @@ class MyUserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, password, **extra_fields)
+
+
 class User(AbstractUser):
     """Кастомная модель пользователя"""
 
@@ -48,5 +51,3 @@ class User(AbstractUser):
     def __str__(self):
         """Возвращает строковое представление объекта User"""
         return self.email or f"User #{self.pk}"
-
-

@@ -9,12 +9,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
 from .permissions import UserIsOwner
-from .serializers import UserSerializer
+from .serializers import UserSerializer, RegisterSerializer
 from bookings.models import Booking
 
 class RegisterView(CreateAPIView):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = RegisterSerializer
     permission_classes = [AllowAny,]
 
     def create(self, request, *args, **kwargs):
@@ -41,7 +41,7 @@ class UserProfileView(APIView):
             "last_name": user.last_name,
             "email": user.email,
             "phone": user.phone,
-            "bookings": booking_serializer.data  # Отправляем историю вместе с профилем
+            "bookings": booking_serializer.data
         })
 
 class UserUpdateAPIView(RetrieveUpdateAPIView):

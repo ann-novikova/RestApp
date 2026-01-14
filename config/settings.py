@@ -8,13 +8,11 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", False) == "True"
 
 ALLOWED_HOSTS = ["*"]
-
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -29,7 +27,6 @@ INSTALLED_APPS = [
     "users",
     "bookings",
     "content",
-    "feedback",
 ]
 
 MIDDLEWARE = [
@@ -61,7 +58,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -72,7 +68,6 @@ DATABASES = {
         "PORT": os.getenv("DATABASE_PORT", default="5432"),
     }
 }
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -89,9 +84,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 LANGUAGE_CODE = "en-us"
-
 
 TIME_ZONE = "Europe/Moscow"
 
@@ -130,18 +123,18 @@ SIMPLE_JWT = {
 }
 
 TEMPLATES = [
-        {
-            'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'DIRS': [os.path.join(BASE_DIR, 'templates')], # <-- Важно!
-            'APP_DIRS': True, # Это позволяет Django искать шаблоны в папках 'templates' внутри каждого приложения
-            'OPTIONS': {
-                'context_processors': [
-                    'django.template.context_processors.debug',
-                    'django.template.context_processors.request',
-                    'django.contrib.auth.context_processors.auth',
-                    'django.contrib.messages.context_processors.messages',
-                ],
-            },
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # <-- Важно!
+        'APP_DIRS': True,  # Это позволяет Django искать шаблоны в папках 'templates' внутри каждого приложения
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'content.context_processors.restaurant_info',
+            ],
         },
-    ]
-
+    },
+]

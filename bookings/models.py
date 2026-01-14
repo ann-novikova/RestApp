@@ -90,13 +90,11 @@ class Booking(models.Model):
         if (end_time - start_time) < timedelta(hours=2):
             raise ValidationError("Минимальное время бронирования — 2 часа.")
 
-        return True
-
     def clean(self):
         """
         Единая валидация для форм, админки и API
         """
-        # 1. Проверка времени
+        # 1. Проверка времени, добавить рабочее время
         self.validate_times(self.start_time, self.end_time)
 
         # 2. Проверка столика и гостей
@@ -105,8 +103,6 @@ class Booking(models.Model):
                 raise ValidationError({
                     'guests_count': f"Стол №{self.table.number} вмещает только {self.table.capacity} чел."
                 })
-
-
 
         # 3. Проверка пересечений
         if self.table and self.start_time and self.end_time:

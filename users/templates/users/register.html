@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -33,59 +35,6 @@
     </div>
 </div>
 
-<script>
-// Функция для получения CSRF-токена из куки
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-document.getElementById('regForm').onsubmit = async (e) => {
-    e.preventDefault();
-
-    const csrftoken = getCookie('csrftoken'); // ПОЛУЧАЕМ ТОКЕН
-
-    const payload = {
-        email: document.getElementById('email').value,
-        password: document.getElementById('password').value,
-        first_name: document.getElementById('first_name').value,
-        last_name: document.getElementById('last_name').value,
-        phone: document.getElementById('phone').value,
-    };
-
-    try {
-        const response = await fetch("{% url 'users:register' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            localStorage.setItem('access_token', data.access);
-            localStorage.setItem('refresh_token', data.refresh);
-            window.location.href = "{% url 'content:home' %}";
-        } else {
-            const errorData = await response.json();
-            alert("Ошибка регистрации: " + JSON.stringify(errorData));
-        }
-    } catch (error) {
-        console.error("Ошибка сети:", error);
-        alert("Произошла ошибка при отправке данных");
-    }
-};
-</script>
+<script src="{% static 'js/auth.js' %}"></script>
+<script src="{% static 'js/register.js' %}"></script>
 {% endblock %}
