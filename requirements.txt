@@ -6,4 +6,5 @@ pillow==12.1.0
 flake8==7.3.0
 djangorestframework_simplejwt==5.5.1
 django-solo==2.5.1
+gunicorn==23.0.0
 
