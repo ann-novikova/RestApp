@@ -1,21 +1,29 @@
-from rest_framework import serializers
 from django.core.exceptions import ValidationError
-from .models import Table, Booking
+from rest_framework import serializers
+
+from .models import Booking, Table
+
 
 class TableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
-        fields = ['id', 'number', 'capacity', 'duration']
+        fields = ["id", "number", "capacity", "duration"]
 
 
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = [
-            'id', 'table', 'start_time', 'end_time',
-            'guests_count', 'customer_name', 'customer_phone', 'status'
+            "id",
+            "table",
+            "start_time",
+            "end_time",
+            "guests_count",
+            "customer_name",
+            "customer_phone",
+            "status",
         ]
-        read_only_fields = ['status']
+        read_only_fields = ["status"]
 
     def validate(self, attrs):
         instance = Booking(**attrs)

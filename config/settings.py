@@ -124,16 +124,16 @@ SIMPLE_JWT = {
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # <-- Важно!
-        'APP_DIRS': True,  # Это позволяет Django искать шаблоны в папках 'templates' внутри каждого приложения
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'content.context_processors.restaurant_info',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],  # <-- Важно!
+        "APP_DIRS": True,  # Это позволяет Django искать шаблоны в папках 'templates' внутри каждого приложения
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "content.context_processors.restaurant_info",
             ],
         },
     },

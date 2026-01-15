@@ -1,8 +1,9 @@
-from django.core.validators import MinValueValidator
+from datetime import datetime, timedelta
+
 from django.core.exceptions import ValidationError
-from django.utils import timezone
-from datetime import timedelta, datetime
+from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 
 from config import settings
 from content.models import RestaurantInfo
@@ -12,18 +13,17 @@ class Table(models.Model):
     """Модель столика"""
 
     number = models.PositiveSmallIntegerField(
-        unique=True,
-        validators=[MinValueValidator(1)],
-        verbose_name="Номер столика"
+        unique=True, validators=[MinValueValidator(1)], verbose_name="Номер столика"
     )
     capacity = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1)],
-        verbose_name="Вместимость (чел.)"
+        validators=[MinValueValidator(1)], verbose_name="Вместимость (чел.)"
     )
-    is_active = models.BooleanField(default=True, verbose_name="Доступен для бронирования")
+    is_active = models.BooleanField(
+        default=True, verbose_name="Доступен для бронирования"
+    )
 
     class Meta:
-        ordering = ['number']
+        ordering = ["number"]
         verbose_name = "Столик"
         verbose_name_plural = "Столики"
 
@@ -35,37 +35,34 @@ class Booking(models.Model):
     """Модель для бронирования столиков"""
 
     STATUS_CHOICES = [
-        ('pending', 'Ожидает подтверждения'),
-        ('confirmed', 'Подтверждено'),
-        ('cancelled', 'Отменено'),
+        ("pending", "Ожидает подтверждения"),
+        ("confirmed", "Подтверждено"),
+        ("cancelled", "Отменено"),
     ]
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='bookings',
-        null=True, blank=True,
-        verbose_name="Пользователь"
+        related_name="bookings",
+        null=True,
+        blank=True,
+        verbose_name="Пользователь",
     )
     table = models.ForeignKey(
-        Table,
-        on_delete=models.CASCADE,
-        related_name='bookings',
-        verbose_name="Столик"
+        Table, on_delete=models.CASCADE, related_name="bookings", verbose_name="Столик"
     )
     start_time = models.DateTimeField(verbose_name="Дата и время начала")
     end_time = models.DateTimeField(verbose_name="Дата и время окончания")
     guests_count = models.PositiveSmallIntegerField(verbose_name="Количество гостей")
 
     # Данные для гостей без регистрации
-    customer_name = models.CharField(max_length=100, blank=True, verbose_name="Имя клиента")
+    customer_name = models.CharField(
+        max_length=100, blank=True, verbose_name="Имя клиента"
+    )
     customer_phone = models.CharField(max_length=20, blank=True, verbose_name="Телефон")
 
     status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending',
-        verbose_name="Статус"
+        max_length=20, choices=STATUS_CHOICES, default="pending", verbose_name="Статус"
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -97,8 +94,8 @@ class Booking(models.Model):
         if info and info.opening_hours:
             try:
 
-                times_part = info.opening_hours.split(': ', 1)[1]
-                opening_str, closing_str = times_part.split('-')
+                times_part = info.opening_hours.split(": ", 1)[1]
+                opening_str, closing_str = times_part.split("-")
 
                 opening_t = datetime.strptime(opening_str, "%H:%M").time()
                 closing_t = datetime.strptime(closing_str, "%H:%M").time()
@@ -110,12 +107,14 @@ class Booking(models.Model):
                 # Время окончания не позже закрытия
                 if end_time.time() > closing_t:
                     raise ValidationError(
-                        f"Ресторан закрывается в {closing_str}. Бронь должна закончиться до этого времени.")
+                        f"Ресторан закрывается в {closing_str}. Бронь должна закончиться до этого времени."
+                    )
 
                 # Дополнительная проверка: начало + 1 час не должно быть позже закрытия
                 if (start_time + timedelta(hours=1)).time() > closing_t:
                     raise ValidationError(
-                        f"Слишком поздно для брони. Минимальное время — 1 час до закрытия ({closing_str}).")
+                        f"Слишком поздно для брони. Минимальное время — 1 час до закрытия ({closing_str})."
+                    )
 
             except (ValueError, IndexError):
                 pass
@@ -130,17 +129,19 @@ class Booking(models.Model):
         # 2. Проверка столика и гостей
         if self.table and self.guests_count:
             if self.guests_count > self.table.capacity:
-                raise ValidationError({
-                    'guests_count': f"Стол №{self.table.number} вмещает только {self.table.capacity} чел."
-                })
+                raise ValidationError(
+                    {
+                        "guests_count": f"Стол №{self.table.number} вмещает только {self.table.capacity} чел."
+                    }
+                )
 
         # 3. Проверка пересечений
         if self.table and self.start_time and self.end_time:
             overlapping = Booking.objects.filter(
                 table=self.table,
-                status__in=['pending', 'confirmed'],
+                status__in=["pending", "confirmed"],
                 start_time__lt=self.end_time,
-                end_time__gt=self.start_time
+                end_time__gt=self.start_time,
             ).exclude(pk=self.pk)
 
             if overlapping.exists():

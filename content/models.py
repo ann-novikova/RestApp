@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.db import models
 from solo.models import SingletonModel
 
@@ -52,7 +50,8 @@ class TeamMember(models.Model):
 
     def __str__(self):
         """Возвращает строковое представление объекта TeamMember"""
-        return f'{self.name} - {self.position}'
+        return f"{self.name} - {self.position}"
+
 
 class ContactMessage(models.Model):
     name = models.CharField(max_length=100, verbose_name="Имя")
@@ -68,6 +67,3 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"От {self.name} - {self.subject}"
-
-
-

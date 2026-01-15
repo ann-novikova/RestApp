@@ -1,6 +1,5 @@
 from django.core.management import BaseCommand
 
-from bookings.models import Table
 from users.models import User
 
 
@@ -29,8 +28,6 @@ class Command(BaseCommand):
             "password": "12345",
         },
     ]
-
-
 
     def handle(self, *args, **kwargs):
 
