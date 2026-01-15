@@ -11,12 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Предзаполняем данные пользователя, если он авторизован
     preloadUserData();
 
-    // Авто-подсчет времени окончания (+2 часа)
+    // Авто-подсчет времени окончания (+1 час)
     const timeInput = document.getElementById('book-time');
     if (timeInput) {
         timeInput.addEventListener('change', function() {
             let t = this.value.split(':');
-            let h = (parseInt(t[0]) + 2) % 24;
+            let h = (parseInt(t[0]) + 1) % 24;
             document.getElementById('book-end-time').value = (h < 10 ? '0' + h : h) + ':' + t[1];
         });
     }

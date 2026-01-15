@@ -1,10 +1,11 @@
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.db import models
 
 from config import settings
+from content.models import RestaurantInfo
 
 
 class Table(models.Model):
@@ -77,6 +78,7 @@ class Booking(models.Model):
 
     @staticmethod
     def validate_times(start_time, end_time):
+        info = RestaurantInfo.objects.first()
         """Единая логика проверки времени для всех мест"""
         if start_time < timezone.now():
             raise ValidationError("Время начала бронирования не может быть в прошлом.")
@@ -87,8 +89,36 @@ class Booking(models.Model):
         if start_time >= end_time:
             raise ValidationError("Время окончания должно быть позже начала.")
 
-        if (end_time - start_time) < timedelta(hours=2):
-            raise ValidationError("Минимальное время бронирования — 2 часа.")
+        if (end_time - start_time) < timedelta(hours=1):
+            raise ValidationError("Минимальное время бронирования — 1 часа.")
+
+        # Проверка рабочих часов из RestaurantInfo
+        info = RestaurantInfo.objects.first()
+        if info and info.opening_hours:
+            try:
+
+                times_part = info.opening_hours.split(': ', 1)[1]
+                opening_str, closing_str = times_part.split('-')
+
+                opening_t = datetime.strptime(opening_str, "%H:%M").time()
+                closing_t = datetime.strptime(closing_str, "%H:%M").time()
+
+                # Время начала не раньше открытия
+                if start_time.time() < opening_t:
+                    raise ValidationError(f"Ресторан открывается в {opening_str}.")
+
+                # Время окончания не позже закрытия
+                if end_time.time() > closing_t:
+                    raise ValidationError(
+                        f"Ресторан закрывается в {closing_str}. Бронь должна закончиться до этого времени.")
+
+                # Дополнительная проверка: начало + 1 час не должно быть позже закрытия
+                if (start_time + timedelta(hours=1)).time() > closing_t:
+                    raise ValidationError(
+                        f"Слишком поздно для брони. Минимальное время — 1 час до закрытия ({closing_str}).")
+
+            except (ValueError, IndexError):
+                pass
 
     def clean(self):
         """

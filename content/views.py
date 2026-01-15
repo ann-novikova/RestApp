@@ -22,7 +22,7 @@ class HomeView(TemplateView):
         else:
             context = self.get_context_data(**kwargs)
             context['contact_form'] = contact_form
-            return render(request, self.template_name, context)
+            return self.render_to_response(context)
 
 class AboutView(TemplateView):
     template_name = 'content/about.html'

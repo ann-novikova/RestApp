@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import models
 from solo.models import SingletonModel
 
@@ -34,6 +36,7 @@ class RestaurantInfo(SingletonModel):
     def __str__(self):
         """Возвращает строковое представление объекта Ресторана"""
         return self.name
+
 
 class TeamMember(models.Model):
     """Модель для описания членов команды ресторана"""
