@@ -21,7 +21,6 @@ document.getElementById('loginForm').onsubmit = async (e) => {
         const data = await response.json();
 
         if (response.ok) {
-            // Теперь Auth.save существует!
             Auth.save(data);
 
             alert("Вход выполнен успешно!");

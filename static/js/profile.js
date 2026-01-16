@@ -82,6 +82,9 @@ function toggleEdit(isEditing) {
 
 // Загрузка данных профиля и списка бронирований
 async function loadProfile() {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
     const statusLabels = {
         'pending': { label: 'В работе', color: '#ffc107' },
         'confirmed': { label: 'Подтверждено', color: '#28a745' },
@@ -89,27 +92,39 @@ async function loadProfile() {
     };
 
     try {
-        // Используем универсальный метод из auth.js
         const response = await Auth.api('/users/profile/api/');
 
         if (response && response.ok) {
             const data = await response.json();
 
-            // 1. Заполняем поля формы
-            document.getElementById('user-first-name').value = data.first_name || '';
-            document.getElementById('user-last-name').value = data.last_name || '';
-            document.getElementById('user-phone').value = data.phone || '';
-            document.getElementById('user-email').value = data.email || '';
+            const firstNameEl = document.getElementById('user-first-name');
+            if (firstNameEl) {
+                firstNameEl.value = data.first_name || '';
+                document.getElementById('user-last-name').value = data.last_name || '';
+                document.getElementById('user-phone').value = data.phone || '';
+                document.getElementById('user-email').value = data.email || '';
 
-            // 2. Рендерим историю бронирований
-            renderBookings(data.bookings, statusLabels);
-        } else if (response && response.status === 401) {
-            Auth.logout(); // Если даже после refresh token не пускает
+                renderBookings(data.bookings, statusLabels);
+            }
         }
     } catch (err) {
         console.error("Ошибка при загрузке данных:", err);
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('access_token');
+
+    if (token) {
+        // Если залогинен — пробуем подгрузить данные везде
+        loadProfile();
+
+        // Предзагрузка формы обратной связи (только если мы на главной, где есть id_name)
+        if (document.getElementById('id_name')) {
+            preloadContactForm();
+        }
+    }
+});
 
 function renderBookings(bookings, statusLabels) {
     const container = document.getElementById('bookings-container');
