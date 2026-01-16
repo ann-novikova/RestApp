@@ -167,11 +167,14 @@ async function saveProfile() {
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('access_token');
 
-    if (token) {
+    if (token && token !== 'undefined' && token !== 'null') {
         loadProfile();
 
-        if (document.getElementById('id_name')) {
+        const contactFormName = document.getElementById('id_name');
+        if (contactFormName) {
             preloadContactForm();
         }
+    } else {
+        console.log("Анонимный пользователь: запросы к профилю отменены.");
     }
 });
