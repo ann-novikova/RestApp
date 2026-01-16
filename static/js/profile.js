@@ -40,15 +40,6 @@ async function preloadContactForm() {
 }
 
 
-// Запуск при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-    // Запускаем предзагрузку профиля (для страницы профиля)
-    loadProfile();
-
-    // НОВОЕ: Запускаем предзагрузку формы обратной связи (для главной страницы)
-    preloadContactForm();
-});
-
 function toggleEdit(isEditing) {
     const profileActions = document.getElementById('profile-actions');
     const editActions = document.getElementById('edit-actions');
