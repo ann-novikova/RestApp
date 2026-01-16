@@ -21,9 +21,13 @@ window.Auth = {
         if (data.refresh) localStorage.setItem('refresh_token', data.refresh);
     },
 
-    logout() {
+    logout(shouldRedirect = true) {
         localStorage.clear();
-        window.location.href = '/users/login/';
+        if (shouldRedirect) {
+            window.location.href = '/users/login/';
+        } else {
+            this.updateNavbar();
+        }
     },
 
     updateNavbar() {
@@ -44,7 +48,7 @@ window.Auth = {
         const token = localStorage.getItem('access_token');
         const headers = {
             'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCookie('csrftoken') // используем this
+            'X-CSRFToken': this.getCookie('csrftoken')
         };
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -58,7 +62,7 @@ window.Auth = {
             if (refreshed) {
                 return this.api(url, method, body);
             } else {
-                this.logout();
+                this.logout(false);
             }
         }
         return response;
