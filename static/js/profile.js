@@ -112,19 +112,6 @@ async function loadProfile() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const token = localStorage.getItem('access_token');
-
-    if (token) {
-        // Если залогинен — пробуем подгрузить данные везде
-        loadProfile();
-
-        // Предзагрузка формы обратной связи (только если мы на главной, где есть id_name)
-        if (document.getElementById('id_name')) {
-            preloadContactForm();
-        }
-    }
-});
 
 function renderBookings(bookings, statusLabels) {
     const container = document.getElementById('bookings-container');
@@ -186,4 +173,14 @@ async function saveProfile() {
 }
 
 // Запуск при загрузке страницы
-document.addEventListener('DOMContentLoaded', loadProfile);
+document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('access_token');
+
+    if (token) {
+        loadProfile();
+
+        if (document.getElementById('id_name')) {
+            preloadContactForm();
+        }
+    }
+});

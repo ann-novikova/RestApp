@@ -1,4 +1,3 @@
-// Используем window.Auth чтобы объект был глобально доступен
 window.Auth = {
     getCookie(name) {
         let cookieValue = null;
@@ -15,7 +14,6 @@ window.Auth = {
         return cookieValue;
     },
 
-    // Переименовали из saveTokens в save
     save(data) {
         if (data.access) localStorage.setItem('access_token', data.access);
         if (data.refresh) localStorage.setItem('refresh_token', data.refresh);
@@ -50,6 +48,7 @@ window.Auth = {
             'Content-Type': 'application/json',
             'X-CSRFToken': this.getCookie('csrftoken')
         };
+        // ИСПРАВЛЕНО: Добавлены обратные кавычки
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
         const options = { method, headers };
@@ -62,7 +61,7 @@ window.Auth = {
             if (refreshed) {
                 return this.api(url, method, body);
             } else {
-                this.logout(false);
+                this.logout(false); // ИСПРАВЛЕНО: Не редиректим
             }
         }
         return response;
@@ -70,7 +69,7 @@ window.Auth = {
 
     async refreshToken() {
         const refresh = localStorage.getItem('refresh_token');
-        const res = await fetch('/users/token/refresh/', {
+        if (!refresh) return false;        const res = await fetch('/users/token/refresh/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -87,4 +86,37 @@ window.Auth = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => Auth.updateNavbar());
+// Инициализация
+document.addEventListener('DOMContentLoaded', () => {
+    Auth.updateNavbar();
+
+    // ИСПРАВЛЕНО: Проверка наличия формы перед установкой обработчика
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            try {
+                const response = await fetch("/users/api/token/", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': Auth.getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    Auth.save(data);
+                    window.location.href = "/";
+                } else {
+                    alert("Ошибка: " + (data.detail || "Неверный логин или пароль"));
+                }
+            } catch (err) {
+                console.error("Ошибка сети:", err);
+            }
+        };
+    }
+});
