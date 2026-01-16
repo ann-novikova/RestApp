@@ -5,6 +5,8 @@ from .models import User
 
 
 class RegistrationForm(UserCreationForm):
+    """Форма для регистрации пользователей"""
+
     email = forms.EmailField(
         required=True, widget=forms.EmailInput(attrs={"class": "form-control"})
     )
@@ -26,6 +28,8 @@ class RegistrationForm(UserCreationForm):
 
 
 class UserLoginForm(AuthenticationForm):
+    """Форма для логина"""
+
     username = forms.CharField(
         widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Логин"})
     )

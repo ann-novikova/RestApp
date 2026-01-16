@@ -5,12 +5,16 @@ from .models import Booking, Table
 
 
 class TableSerializer(serializers.ModelSerializer):
+    """Сериализатор для столиков"""
+
     class Meta:
         model = Table
         fields = ["id", "number", "capacity", "duration"]
 
 
 class BookingSerializer(serializers.ModelSerializer):
+    """Сериализатор для бронирований"""
+
     class Meta:
         model = Booking
         fields = [

@@ -4,6 +4,8 @@ from .models import ContactMessage
 
 
 class ContactForm(forms.ModelForm):
+    """Форма для обратной связи"""
+
     class Meta:
         model = ContactMessage
         fields = ["name", "email", "subject", "message"]

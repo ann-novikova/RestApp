@@ -7,6 +7,8 @@ from .models import RestaurantInfo, TeamMember
 
 
 class HomeView(TemplateView):
+    """Главная страница с формой обратной связи"""
+
     template_name = "content/home.html"
 
     def get_context_data(self, **kwargs):
@@ -28,6 +30,8 @@ class HomeView(TemplateView):
 
 
 class AboutView(TemplateView):
+    """Контроллер для вывода информации о ресторане"""
+
     template_name = "content/about.html"
 
     def get_context_data(self, **kwargs):

@@ -54,6 +54,8 @@ class TeamMember(models.Model):
 
 
 class ContactMessage(models.Model):
+    """Модель для обратной связи"""
+
     name = models.CharField(max_length=100, verbose_name="Имя")
     email = models.EmailField(verbose_name="Email")
     subject = models.CharField(max_length=200, verbose_name="Тема")

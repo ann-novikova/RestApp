@@ -5,6 +5,7 @@ from .models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор для пользователя"""
 
     class Meta:
         model = User
@@ -16,6 +17,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    """Сериализатор для регистрации"""
+
     class Meta:
         model = User
         fields = ["email", "password", "first_name", "last_name", "phone"]

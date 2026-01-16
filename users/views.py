@@ -16,6 +16,8 @@ from .serializers import RegisterSerializer, UserSerializer
 
 
 class RegisterView(CreateAPIView):
+    """API контроллер для регистрации"""
+
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [
@@ -32,8 +34,13 @@ class RegisterView(CreateAPIView):
 
 
 class UserProfileView(APIView):
+    """API контроллер для информации о профиле пользователя"""
+
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [
+        IsAuthenticated,
+        UserIsOwner,
+    ]
 
     def get(self, request):
         user = request.user
@@ -67,10 +74,14 @@ class UserUpdateAPIView(RetrieveUpdateAPIView):
 
 
 class LoginHTMLView(TemplateView):
+    """Контроллер для отображения страницы логина"""
+
     template_name = "users/login.html"
 
 
 class RegisterHTMLView(TemplateView):
+    """Контроллер для отображения страницы регистрации"""
+
     template_name = "users/register.html"
     permission_classes = [
         AllowAny,
@@ -96,4 +107,6 @@ class RegisterHTMLView(TemplateView):
 
 
 class ProfileHTMLView(TemplateView):
+    """Контроллер для отображения страницы профиля"""
+
     template_name = "users/profile.html"

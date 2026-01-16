@@ -3,6 +3,7 @@ from django.db import models
 
 
 class MyUserManager(BaseUserManager):
+    """Кастомный менеджер для создания пользователей"""
 
     def create_user(self, email, password=None, **extra_fields):
         if not email:

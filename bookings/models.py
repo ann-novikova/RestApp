@@ -75,8 +75,9 @@ class Booking(models.Model):
 
     @staticmethod
     def validate_times(start_time, end_time):
-        info = RestaurantInfo.objects.first()
         """Единая логика проверки времени для всех мест"""
+
+        info = RestaurantInfo.objects.first()
         if start_time < timezone.now():
             raise ValidationError("Время начала бронирования не может быть в прошлом.")
 

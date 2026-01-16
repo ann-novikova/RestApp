@@ -7,6 +7,8 @@ from .models import Booking, Table
 
 
 class BookingService:
+    """Класс для бронирования с сервесной логикой"""
+
     @staticmethod
     def get_table_availability(date_str: str, start_str: str, end_str: str):
         """

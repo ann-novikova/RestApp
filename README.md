@@ -36,12 +36,12 @@ shell
     Создайте файл .env в корне проекта по образцу:
     
     DEBUG=True
-    SECRET_KEY=your_secret_key
-    DATABASE_NAME=
-    DATABASE_USER=
-    DATABASE_PASSWORD=
-    DATABASE_HOST=
-    DATABASE_PORT=
+  SECRET_KEY=your_secret_key
+  DATABASE_NAME=restaurant_db
+  DATABASE_USER=restaurant_user
+  DATABASE_PASSWORD=restaurant_password
+  DATABASE_HOST=db
+  DATABASE_PORT=5432
     
 
 3.  Запустите проект:
@@ -54,7 +54,27 @@ shell
 
 ---
 
- 💻 Локальная разработка (без Docker)
+# Наполнение базы данных (Обязательно)
+
+Для работы приложения необходимо загрузить начальные данные (информация о ресторане, схема столиков, команда). В корне проекта подготовлен файл data.json.
+
+Если вы используете Docker:
+В новом окне терминала выполните команду:
+
+shell
+
+    docker-compose exec web python manage.py loaddata data.json
+
+```
+
+Если вы запустили проект локально:
+
+```
+shell
+
+    python manage.py loaddata data.json
+
+# Локальная разработка (без Docker)
 
 1.  Создайте виртуальное окружение и установите зависимости:
     
