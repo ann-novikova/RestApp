@@ -121,12 +121,12 @@ jobs:
             echo "DATABASE_HOST=db" >> .env
             echo "DATABASE_PORT=5432" >> .env
             echo "SECRET_KEY='${{ secrets.SECRET_KEY }}'" >> .env
-            echo "DEBUG=False" >> .env
+            echo "DEBUG=True" >> .env
             echo "ALLOWED_HOSTS='${{ secrets.SERVER_IP }},localhost,127.0.0.1'" >> .env
             echo "DOCKER_USER=${{ secrets.DOCKER_HUB_USERNAME }}" >> .env
             echo "IMAGE_TAG=${{ github.sha }}" >> .env
             
-            docker compose down -v || true
+            docker compose down || true
             docker volume prune -f
             docker compose pull
             docker compose up -d
