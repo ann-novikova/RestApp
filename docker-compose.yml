@@ -15,8 +15,6 @@ services:
       - .env
     environment:
       DATABASE_HOST: db
-    volumes:
-      - .:/app
     depends_on:
       - db
 
