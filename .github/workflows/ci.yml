@@ -111,5 +111,5 @@ jobs:
               docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/restapp:${{ github.sha }}
               docker stop restapp || true
               docker rm restapp || true
-              docker run -d --name restapp -p 80:8000 ${{ secrets.DOCKER_HUB_USERNAME }}/restapp:${{ github.sha }}
+              docker run -d --name restapp -p 8000:8000 ${{ secrets.DOCKER_HUB_USERNAME }}/restapp:${{ github.sha }}
             EOF
