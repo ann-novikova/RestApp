@@ -126,7 +126,7 @@ jobs:
             echo "DOCKER_USER=${{ secrets.DOCKER_HUB_USERNAME }}" >> .env
             echo "IMAGE_TAG=${{ github.sha }}" >> .env
             
-            docker compose down || true
+            docker compose down --remove-orphans || true
             docker volume prune -f
             docker compose pull
             docker compose up -d
@@ -135,6 +135,7 @@ jobs:
             sleep 15
             
             docker compose exec -T web python manage.py migrate --noinput
-            docker compose exec -T web python manage.py loaddata data.json
             docker compose exec -T web python manage.py collectstatic --noinput --clear
+            docker compose exec -T web python manage.py loaddata data.json
+            docker compose ps
           EOF
