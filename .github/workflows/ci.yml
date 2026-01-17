@@ -109,30 +109,30 @@ jobs:
 
       - name: Deploy to Server
         run: |
-          run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "mkdir -p ~/restapp_project"
           
           scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/restapp_project/docker-compose.yml
           
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-          cd ~/restapp_project
+            cd ~/restapp_project
           
-          echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" > .env
-          echo "DATABASE_USER=${{ secrets.DATABASE_USER }}" >> .env
-          echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> .env
-          echo "DATABASE_HOST=db" >> .env
-          echo "SECRET_KEY='${{ secrets.SECRET_KEY }}'" >> .env
-          echo "DEBUG=False" >> .env
-          echo "ALLOWED_HOSTS=${{ secrets.SERVER_IP }}" >> .env
+            echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" > .env
+            echo "DATABASE_USER=${{ secrets.DATABASE_USER }}" >> .env
+            echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> .env
+            echo "DATABASE_HOST=db" >> .env
+            echo "SECRET_KEY='${{ secrets.SECRET_KEY }}'" >> .env
+            echo "DEBUG=False" >> .env
+            echo "ALLOWED_HOSTS=${{ secrets.SERVER_IP }}" >> .env
           
-          export IMAGE_TAG=${{ github.sha }}
-          export DOCKER_USER=${{ secrets.DOCKER_HUB_USERNAME }}
+            echo "DOCKER_USER=${{ secrets.DOCKER_HUB_USERNAME }}" >> .env
+            echo "IMAGE_TAG=${{ github.sha }}" >> .env
           
-          docker compose pull
-          docker compose down || true
-          docker compose up -d
+            echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
           
-          sleep 10
-          docker compose exec -T web python manage.py migrate --noinput
-          docker compose exec -T web python manage.py collectstatic --noinput --clear
+            docker compose pull
+            docker compose down --remove-orphans
+            docker compose up -d
+          
+            sleep 10
+            docker compose exec -T web python manage.py collectstatic --noinput --clear
           EOF
