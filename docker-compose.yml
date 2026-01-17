@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   web:
     image: ${DOCKER_USER}/restapp:${IMAGE_TAG}
