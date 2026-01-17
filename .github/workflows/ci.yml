@@ -127,6 +127,7 @@ jobs:
             echo "IMAGE_TAG=${{ github.sha }}" >> .env
             
             docker compose down -v || true
+            docker volume prune -f
             docker compose pull
             docker compose up -d
             
