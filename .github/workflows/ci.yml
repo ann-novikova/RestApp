@@ -115,7 +115,6 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
             cd ~/restapp_project
             
-            # 1. Создаем .env (добавляем кавычки для безопасности)
             echo "DATABASE_NAME='${{ secrets.DATABASE_NAME }}'" > .env
             echo "DATABASE_USER='${{ secrets.DATABASE_USER }}'" >> .env
             echo "DATABASE_PASSWORD='${{ secrets.DATABASE_PASSWORD }}'" >> .env
@@ -127,25 +126,14 @@ jobs:
             echo "DOCKER_USER=${{ secrets.DOCKER_HUB_USERNAME }}" >> .env
             echo "IMAGE_TAG=${{ github.sha }}" >> .env
             
-            # 2. ПОЛНАЯ ОЧИСТКА (Включая тома, если база не стартует)
             docker compose down -v || true
-            docker network prune -f || true
-            
-            # 3. Запуск
             docker compose pull
             docker compose up -d
             
-            # 4. Проверка, почему падает база (ЛОГИ)
             echo "Ожидание запуска базы..."
             sleep 15
             
-            echo "--- ЛОГИ БАЗЫ ДАННЫХ (Если тут ошибка, проверьте секреты) ---"
-            docker compose logs db
-            
-            echo "--- СТАТУС ---"
-            docker compose ps
-            
-            # 5. Миграции
             docker compose exec -T web python manage.py migrate --noinput
+            docker compose exec -T web python manage.py loaddata data.json
             docker compose exec -T web python manage.py collectstatic --noinput --clear
           EOF
