@@ -109,7 +109,7 @@ jobs:
         run: |
             ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
               docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/restapp:${{ github.sha }}
-              docker stop habapp || true
-              docker rm habapp || true
+              docker stop restapp || true
+              docker rm restapp || true
               docker run -d --name restapp -p 80:8000 ${{ secrets.DOCKER_HUB_USERNAME }}/restapp:${{ github.sha }}
             EOF
