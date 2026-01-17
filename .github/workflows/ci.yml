@@ -126,12 +126,12 @@ jobs:
             echo "DOCKER_USER=${{ secrets.DOCKER_HUB_USERNAME }}" >> .env
             echo "IMAGE_TAG=${{ github.sha }}" >> .env
             
-            docker stop rest_app postgres_db || true
-            docker rm -f rest_app postgres_db || true
+            docker rm -f postgres_db rest_app || true
+
+            docker network prune -f || true
             
             docker compose pull
-            docker compose down --remove-orphans || true
-            docker compose up -d
+            docker compose up -d --force-recreate
             
             sleep 10
             docker compose exec -T web python manage.py migrate --noinput
