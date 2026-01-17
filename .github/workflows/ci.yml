@@ -126,24 +126,20 @@ jobs:
             echo "DOCKER_USER=${{ secrets.DOCKER_HUB_USERNAME }}" >> .env
             echo "IMAGE_TAG=${{ github.sha }}" >> .env
             
-            docker rm -f postgres_db rest_app || true
+            docker compose down --remove-orphans || true
+            docker network prune -f || true
 
             docker network prune -f || true
             
-             docker compose pull
-            docker compose up -d --force-recreate
+            docker compose pull
+            docker compose up -d
             
-            # 4. Ждем немного и смотрим статус
-            sleep 15
+            sleep 30
             
-            echo "--- СТАТУС КОНТЕЙНЕРОВ ---"
-            docker compose ps -a
+            docker compose ps
             
-            echo "--- ЛОГИ ПРИЛОЖЕНИЯ (Здесь будет ошибка) ---"
             docker compose logs web
-            
-            # 5. Только теперь пытаемся выполнить команды
-            # Если web упал, эти команды выдадут ошибку, но мы уже увидим логи выше
+
             docker compose exec -T web python manage.py migrate --noinput
             docker compose exec -T web python manage.py collectstatic --noinput --clear
           EOF
