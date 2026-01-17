@@ -130,10 +130,20 @@ jobs:
 
             docker network prune -f || true
             
-            docker compose pull
+             docker compose pull
             docker compose up -d --force-recreate
             
-            sleep 10
+            # 4. Ждем немного и смотрим статус
+            sleep 15
+            
+            echo "--- СТАТУС КОНТЕЙНЕРОВ ---"
+            docker compose ps -a
+            
+            echo "--- ЛОГИ ПРИЛОЖЕНИЯ (Здесь будет ошибка) ---"
+            docker compose logs web
+            
+            # 5. Только теперь пытаемся выполнить команды
+            # Если web упал, эти команды выдадут ошибку, но мы уже увидим логи выше
             docker compose exec -T web python manage.py migrate --noinput
             docker compose exec -T web python manage.py collectstatic --noinput --clear
           EOF
