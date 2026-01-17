@@ -119,7 +119,7 @@ jobs:
             echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" > .env
             echo "DATABASE_USER=${{ secrets.DATABASE_USER }}" >> .env
             echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> .env
-            echo "DATABASE_HOST=db" >> .env
+            echo "DATABASE_HOST={{ secrets.HOST}" >> .env
             echo "SECRET_KEY='${{ secrets.SECRET_KEY }}'" >> .env
             echo "DEBUG=False" >> .env
             echo "ALLOWED_HOSTS=${{ secrets.SERVER_IP }}" >> .env
