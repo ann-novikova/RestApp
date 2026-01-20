@@ -15,7 +15,7 @@ document.getElementById('regForm').onsubmit = async (e) => {
     if (response && response.ok) {
         const data = await response.json();
 
-        Auth.saveTokens(data);
+        Auth.save(data);
 
         alert("Регистрация прошла успешно!");
         window.location.href = "/";
