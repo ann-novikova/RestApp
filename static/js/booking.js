@@ -1,4 +1,5 @@
 let selectedTableId = null;
+let selectedTableCapacity = 0;
 const tableCoords = [
     {r: 1, c: 1}, {r: 1, c: 3}, {r: 1, c: 5},
     {r: 3, c: 1}, {r: 6, c: 3}, {r: 6, c: 5}, {r: 6, c: 1}
@@ -142,6 +143,13 @@ function renderTables(tables, date, start, end) {
         if (table.is_available) {
             wrapper.onclick = () => {
                 selectedTableId = table.id;
+                selectedTableCapacity = table.capacity;
+                const guestsInput = document.getElementById('cust-guests');
+
+
+                guestsInput.max = table.capacity;
+                guestsInput.value = table.capacity;
+
                 document.getElementById('summary').innerText = `СТОЛ №${table.number} | ${date} | ${start} - ${end}`;
                 showStep(3);
             };
