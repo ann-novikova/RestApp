@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+<link rel="stylesheet" href="{% static 'css/booking.css' %}">
+
+<div class="booking-header">
+    <div class="container">
+        <h1 class="display-4 fst-italic">Резерв столика</h1>
+        <p class="text-gold text-uppercase tracking-widest small">NVK Panoramic Experience</p>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="booking-card shadow-lg">
+
+                <!-- ШАГ 1 -->
+                <div id="step-1">
+                    <h4 class="fw-light mb-4 text-gold small text-uppercase">1. Параметры брони</h4>
+                    <div class="row g-4">
+                        <div class="col-md-4 text-start">
+                            <label class="small text-gold text-uppercase mb-2">Дата</label>
+                            <input type="date" id="book-date" class="form-control form-control-nvk" value="{{ today }}">
+                            <span class="error-message" id="error-date"></span>
+                        </div>
+                        <div class="col-md-4 text-start">
+                            <label class="small text-gold text-uppercase mb-2">Начало</label>
+                            <input type="time" id="book-time" class="form-control form-control-nvk" value="19:00">
+                            <span class="error-message" id="error-start_time"></span>
+                        </div>
+                        <div class="col-md-4 text-start">
+                            <label class="small text-gold text-uppercase mb-2">Окончание</label>
+                            <input type="time" id="book-end-time" class="form-control form-control-nvk" value="21:00">
+                            <span class="error-message" id="error-end_time"></span>
+                        </div>
+                    </div>
+                    <div id="date-error" class="text-danger small mt-3 text-center" style="display: none; font-weight: bold;"></div>
+                    <button type="button" onclick="checkAvailability()" class="btn btn-gold w-100 mt-5">Выбрать место на
+                        схеме
+                    </button>
+                </div>
+
+                <!-- ШАГ 2 -->
+                <div id="step-2" class="hidden text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-light m-0">2. Схема зала</h4>
+                        <button onclick="showStep(1)" class="btn btn-link text-gold btn-sm text-decoration-none">← К
+                            выбору времени
+                        </button>
+                    </div>
+
+                    <div class="restaurant-floor" id="floor-plan">
+                        <div class="window-view window-top"></div>
+                        <div class="window-view window-left"></div>
+
+                        <!-- БАР (статичный элемент) -->
+                        <div class="bar-counter">BAR</div>
+                    </div>
+                    <p class="text-center text-gold small mt-4 uppercase tracking-widest">Столики, расположенные у
+                        панорамных окон пользуются повышенным спросом </p>
+                        <p class="text-center text-gold small mt-2 uppercase tracking-widest">Около барной стойки свободная рассадка
+                    </p>
+                </div>
+
+                <!-- ШАГ 3 -->
+                <div id="step-3" class="hidden">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-light m-0">3. Ваши данные</h4>
+                        <button onclick="showStep(2)" class="btn btn-link text-gold btn-sm text-decoration-none">← Назад
+                            к карте
+                        </button>
+                    </div>
+                    <div id="summary"
+                         class="alert border-secondary text-center text-gold small mb-4 bg-transparent"></div>
+                    <form id="booking-form" class="row justify-content-center">
+                        <div class="col-md-8 text-center">
+                            <label class="small text-gold text-uppercase mb-2">Количество гостей</label>
+                            <input type="number" id="cust-guests"
+                                   class="form-control form-control-nvk text-center mx-auto mb-4"
+                                   style="max-width: 80px;" min="1" value="1" required >
+                            <div id="error-guests_count" class="text-danger small mb-3"></div>
+
+                            <input type="text" id="cust-name" class="form-control form-control-nvk mb-3"
+                                   placeholder="ВАШЕ ИМЯ" required>
+                            <input type="tel" id="cust-phone" class="form-control form-control-nvk mb-3"
+                                   placeholder="НОМЕР ТЕЛЕФОНА" required>
+                            <textarea id="cust-comment" class="form-control form-control-nvk mb-4"
+                                      placeholder="ПОЖЕЛАНИЯ"></textarea>
+
+                            <button type="submit" class="btn btn-gold w-100 py-3">Подтвердить резерв</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="step-success" class="hidden text-center py-5">
+                    <h2 class="text-gold fw-light">Заявка принята</h2>
+                    <p class="text-muted">Ожидайте звонка менеджера для подтверждения столика.</p>
+                    <a href="/" class="btn btn-outline-light mt-4 px-5 rounded-0">На главную</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/bootstrap.min.js' %}"></script>
+<script src="{% static 'js/auth.js' %}"></script>
+<script src="{% static 'js/booking.js' %}"></script>
+{% endblock %}

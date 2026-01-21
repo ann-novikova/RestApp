@@ -1,0 +1,153 @@
+from datetime import datetime, timedelta
+
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.utils import timezone
+
+from config import settings
+from content.models import RestaurantInfo
+
+
+class Table(models.Model):
+    """Модель столика"""
+
+    number = models.PositiveSmallIntegerField(
+        unique=True, validators=[MinValueValidator(1)], verbose_name="Номер столика"
+    )
+    capacity = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1)], verbose_name="Вместимость (чел.)"
+    )
+    is_active = models.BooleanField(
+        default=True, verbose_name="Доступен для бронирования"
+    )
+
+    class Meta:
+        ordering = ["number"]
+        verbose_name = "Столик"
+        verbose_name_plural = "Столики"
+
+    def __str__(self):
+        return f"Столик №{self.number} (на {self.capacity} чел.)"
+
+
+class Booking(models.Model):
+    """Модель для бронирования столиков"""
+
+    STATUS_CHOICES = [
+        ("pending", "Ожидает подтверждения"),
+        ("confirmed", "Подтверждено"),
+        ("cancelled", "Отменено"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="bookings",
+        null=True,
+        blank=True,
+        verbose_name="Пользователь",
+    )
+    table = models.ForeignKey(
+        Table, on_delete=models.CASCADE, related_name="bookings", verbose_name="Столик"
+    )
+    start_time = models.DateTimeField(verbose_name="Дата и время начала")
+    end_time = models.DateTimeField(verbose_name="Дата и время окончания")
+    guests_count = models.PositiveSmallIntegerField(verbose_name="Количество гостей")
+
+    # Данные для гостей без регистрации
+    customer_name = models.CharField(
+        max_length=100, blank=True, verbose_name="Имя клиента"
+    )
+    customer_phone = models.CharField(max_length=20, blank=True, verbose_name="Телефон")
+
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending", verbose_name="Статус"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Бронирование"
+        verbose_name_plural = "Бронирования"
+
+    def __str__(self):
+        return f"Бронь №{self.id} - Столик {self.table.number} на {self.start_time}"
+
+    @staticmethod
+    def validate_times(start_time, end_time):
+        """Единая логика проверки времени для всех мест"""
+
+        info = RestaurantInfo.objects.first()
+        if start_time < timezone.now():
+            raise ValidationError("Время начала бронирования не может быть в прошлом.")
+
+        if not start_time or not end_time:
+            raise ValidationError("Необходимо указать начало и конец.")
+
+        if start_time >= end_time:
+            raise ValidationError("Время окончания должно быть позже начала.")
+
+        if (end_time - start_time) < timedelta(hours=1):
+            raise ValidationError("Минимальное время бронирования — 1 часа.")
+
+        # Проверка рабочих часов из RestaurantInfo
+        info = RestaurantInfo.objects.first()
+        if info and info.opening_hours:
+            try:
+
+                times_part = info.opening_hours.split(": ", 1)[1]
+                opening_str, closing_str = times_part.split("-")
+
+                opening_t = datetime.strptime(opening_str, "%H:%M").time()
+                closing_t = datetime.strptime(closing_str, "%H:%M").time()
+
+                # Время начала не раньше открытия
+                if start_time.time() < opening_t:
+                    raise ValidationError(f"Ресторан открывается в {opening_str}.")
+
+                # Время окончания не позже закрытия
+                if end_time.time() > closing_t:
+                    raise ValidationError(
+                        f"Ресторан закрывается в {closing_str}. Бронь должна закончиться до этого времени."
+                    )
+
+                # Дополнительная проверка: начало + 1 час не должно быть позже закрытия
+                if (start_time + timedelta(hours=1)).time() > closing_t:
+                    raise ValidationError(
+                        f"Слишком поздно для брони. Минимальное время — 1 час до закрытия ({closing_str})."
+                    )
+
+            except (ValueError, IndexError):
+                pass
+
+    def clean(self):
+        """
+        Единая валидация для форм, админки и API
+        """
+        # 1. Проверка времени, добавить рабочее время
+        self.validate_times(self.start_time, self.end_time)
+
+        # 2. Проверка столика и гостей
+        if self.table and self.guests_count:
+            if self.guests_count > self.table.capacity:
+                raise ValidationError(
+                    {
+                        "guests_count": f"Стол №{self.table.number} вмещает только {self.table.capacity} чел."
+                    }
+                )
+
+        # 3. Проверка пересечений
+        if self.table and self.start_time and self.end_time:
+            overlapping = Booking.objects.filter(
+                table=self.table,
+                status__in=["pending", "confirmed"],
+                start_time__lt=self.end_time,
+                end_time__gt=self.start_time,
+            ).exclude(pk=self.pk)
+
+            if overlapping.exists():
+                raise ValidationError("Этот столик уже занят на это время.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

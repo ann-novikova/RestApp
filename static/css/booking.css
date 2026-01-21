@@ -1,0 +1,114 @@
+    :root {
+        --nvk-gold: #c5a872;
+        --nvk-black: #0d0d0d;
+    }
+
+    body { background-color: var(--nvk-black); color: #fff; }
+
+    .booking-header { padding: 80px 0 40px; text-align: center; }
+    .booking-card { background: #161616; border: 1px solid #222; padding: 40px; position: relative; }
+
+    /* СЕТКА GRID: 6 КОЛОНОК */
+    .restaurant-floor {
+        position: relative;
+        background: #0a0a0a;
+        border: 1px solid #222;
+        display: grid;
+        grid-template-columns: repeat(6, 1fr); /* 6 колонок */
+        grid-template-rows: repeat(6, 1fr);    /* 6 строк */
+        width: 100%;
+        max-width: 700px;
+        height: 550px;
+        margin: 20px auto;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    /* ОКНА */
+    .window-view { position: absolute; z-index: 1; pointer-events: none; }
+    .window-top { top: 0; left: 0; right: 0; height: 6px; background: #87ceeb; box-shadow: 0 0 15px rgba(135, 206, 235, 0.4); opacity: 0.5; }
+    .window-left { top: 0; left: 0; bottom: 0; width: 6px; background: #87ceeb; box-shadow: 0 0 15px rgba(135, 206, 235, 0.4); opacity: 0.5; }
+
+    /* БОЛЬШАЯ БАРНАЯ СТОЙКА (в центре 6-колоночной сетки) */
+    .bar-counter {
+        grid-column: 3 / 6; /* Занимает 3 и 4 колонки */
+        grid-row: 3 / 6;    /* Занимает 3 и 4 строки */
+        background: #111;
+        border: 2px solid var(--nvk-gold);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--nvk-gold);
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        box-shadow: 0 0 30px rgba(0,0,0,0.6);
+        z-index: 5;
+    }
+
+    /* СТИЛЬ СТОЛИКОВ */
+    .table-wrapper { display: flex; align-items: center; justify-content: center; z-index: 10; }
+
+    .table-circle {
+        border-radius: 50%;
+        border: 2px solid #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.4s ease;
+        cursor: pointer;
+        background: #1a1a1a;
+    }
+
+    .table-circle.available:hover {
+        border-color: var(--nvk-gold);
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(197, 168, 114, 0.3);
+    }    .table-circle.occupied { opacity: 0.4; cursor: not-allowed; }
+
+    .table-number { font-size: 1.1rem; color: #fff; margin-bottom: -2px; }
+    .table-capacity { font-size: 0.55rem; text-transform: uppercase; color: var(--nvk-gold); }
+
+    /* Размеры (зависимость от вместимости) */
+    .size-sm { width: 80px; height: 80px; }
+    .size-md { width: 110px; height: 110px; }
+    .size-lg { width: 150px; height: 170px; }
+
+    /* ФОРМА */
+    .form-control-nvk {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid #333;
+        border-radius: 0;
+        color: #fff;
+        padding: 10px 0;
+    }
+    .form-control-nvk:focus {
+    background-color: #222 !important;
+    color: #d4af37 !important;
+    box-shadow: none !important;
+    border-color: #d4af37 !important;
+}
+    .form-control-nvk:active,
+    .form-control-nvk:valid {
+    background-color: #1a1a1a !important;
+}
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+    -webkit-text-fill-color: #d4af37 !important;
+    -webkit-box-shadow: 0 0 0px 1000px #1a1a1a inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+    .form-control-nvk::-webkit-calendar-picker-indicator { filter: invert(1); }
+    .form-control-nvk::placeholder {color: #6b6b6b; opacity: 2;}
+
+    .label-light { color: #e0e0e0 !important; font-weight: 300; letter-spacing: 0.5px; }
+    .error-message { color: #ff4d4d; font-size: 0.75rem; display: block; min-height: 18px; margin-bottom: 15px; }
+    .btn-gold { background: var(--nvk-gold); color: #000; font-weight: bold; border-radius: 0; padding: 15px; border: none; }
+    .btn-gold:hover { background: #b49663; color: #000; }
+    .hidden { display: none; }
